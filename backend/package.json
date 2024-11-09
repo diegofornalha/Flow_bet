@@ -352,6 +352,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/debug": "^4.1.12",
     "hardhat": "^2.22.13",
     "mocha": "^10.7.3"
   },
