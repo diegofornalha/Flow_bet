@@ -1,13 +1,51 @@
-# Sample Hardhat Project
+## Passo a Passo
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+1. **Instalar Dependências**
 
-Try running some of the following tasks:
+   ```shell
+   npm install
+   ```
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
+2. **Compilar o Contrato**
+
+   ```shell
+   npx hardhat compile
+   ```
+
+3. **Executar Testes**
+
+   ```shell
+   npx hardhat test
+   ```
+
+4. **Executar um Nó Local**
+
+   ```shell
+   npx hardhat node
+   ```
+
+5. **Fazer Deploy do Contrato**
+
+   ```shell
+   npx hardhat ignition deploy ./ignition/modules/Lock.ts
+   ```
+
+6. **Obter Ajuda**
+   ```shell
+   npx hardhat help
+   ```
+
+## Variáveis de Ambiente
+
+Certifique-se de configurar suas variáveis de ambiente no arquivo `.env`. Por exemplo, defina sua chave privada:
+
 ```
+FLOW_PRIVATE_KEY=seu_valor_aqui
+```
+
+## Observações
+
+- **Configuração de Rede**: O arquivo `hardhat.config.ts` está configurado para usar a rede de teste do Flow. Certifique-se de que as credenciais e URLs estão corretas.
+- **Segurança**: Não compartilhe seu arquivo `.env` ou qualquer informação sensível.
+
+Siga esses passos para configurar e executar seu projeto Hardhat de forma eficaz. Se precisar de mais informações, consulte a documentação oficial do Hardhat.

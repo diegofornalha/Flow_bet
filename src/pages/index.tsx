@@ -1,33 +1,22 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import type { NextPage } from "next";
 import { useState } from "react";
-import { BettingCard } from "../components/BettingCard";
 import { useReadContract } from "wagmi";
 import Image, { StaticImageData } from "next/image";
+import { BettingCard } from "@/src/components/BettingCard"; // Importando o BettingCard
 
-import colts from "@/src/public/assets/colts.png";
-import bengals from "@/src/public/assets/bengals.png";
-import browns from "@/src/public/assets/browns.png";
-import dolphins from "@/src/public/assets/dolphins.png";
-import packers from "@/src/public/assets/packers.png";
-import jaguars from "@/src/public/assets/jaguars.png";
-import patriots from "@/src/public/assets/patriots.png";
-import texans from "@/src/public/assets/texans.png";
 import flow from "@/src/public/assets/flow.png";
+import brasilLogo from "@/src/public/assets/brasil.png";
+import argentinaLogo from "@/src/public/assets/argentina.png";
 
 // Object mapping team names to their logo URLs
 const teamLogos: Record<string, StaticImageData> = {
-  Patriots: patriots, // Replace with actual logo URL
-  Jaguars: jaguars, // Replace with actual logo URL
-  Texans: texans, // Replace with actual logo URL
-  Packers: packers, // Replace with actual logo URL
-  Bengals: bengals, // Replace with actual logo URL
-  Browns: browns, // Replace with actual logo URL
-  Dolphins: dolphins, // Replace with actual logo URL
-  Colts: colts, // Replace with actual logo URL
+  Brasil: brasilLogo,
+  Argentina: argentinaLogo,
 };
 
-const Home: NextPage = () => {
+// Hook personalizado para lógica de contrato
+function useNFLGames() {
   const abi = [
     {
       inputs: [],
@@ -112,296 +101,206 @@ const Home: NextPage = () => {
     functionName: "viewVolume",
     args: [],
   });
-  console.log(data?.toString());
+
   const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
   const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
   const total = tokenA + tokenB;
   const priceA = 100 * (tokenA / (tokenA + tokenB));
   const priceB = 100 * (tokenB / (tokenA + tokenB));
-  console.log(tokenA, tokenB, priceA, priceB);
 
-  const nflGames = [
-    {
-      time: "6:30 AM",
-      volume: `$${total}`,
-      teams: [
-        { name: "Patriots", record: "1-5", price: priceA },
-        { name: "Jaguars", record: "1-5", price: priceB },
-      ],
-    },
-    {
-      time: "10:00 AM",
-      volume: "$119,780",
-      teams: [
-        { name: "Texans", record: "5-1", price: 40 },
-        { name: "Packers", record: "4-2", price: 60 },
-      ],
-    },
-    {
-      time: "10:00 AM",
-      volume: "$17,430",
-      teams: [
-        { name: "Bengals", record: "2-4", price: 70 },
-        { name: "Browns", record: "1-5", price: 30 },
-      ],
-    },
-    {
-      time: "10:00 AM",
-      volume: "$26,780",
-      teams: [
-        { name: "Dolphins", record: "2-3", price: 44 },
-        { name: "Colts", record: "3-3", price: 56 },
-      ],
-    },
-  ];
+  return { total, priceA, priceB };
+}
+
+const Home: NextPage = () => {
+  const { total, priceA, priceB } = useNFLGames();
   const [selectedGame, setSelectedGame] = useState<{
     game: string;
     team: string;
   } | null>(null);
-  const [comment, setComment] = useState("");
-  const [commentsList, setCommentsList] = useState<string[]>([]);
+
+  const copaAmericaGames = [
+    {
+      time: "6:30 AM",
+      volume: total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      teams: [
+        { name: "Brasil", record: "0-0", price: priceA },
+        { name: "Argentina", record: "0-0", price: priceB },
+      ],
+    },
+    // ... other games if needed ...
+  ];
 
   const selectTeam = (game: string, team: string) => {
     setSelectedGame({ game, team });
   };
 
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setComment(e.target.value);
-  };
-
-  const handleCommentSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (comment.trim()) {
-      setCommentsList([...commentsList, comment]);
-      setComment(""); // Clear the input after submission
-    }
-  };
   return (
     <>
       <div
         style={{
-          backgroundColor: "white",
+          backgroundColor: "#f5f5f7",
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
-          padding: "20px",
+          padding: "40px",
           position: "relative",
         }}
       >
-        {/* Connect Wallet Button at the Top Right */}
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            zIndex: 10,
-          }}
-        >
-          <ConnectButton />
-        </div>
-
-        {/* Logo Image and Title */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            whiteSpace: "nowrap",
-            marginBottom: "20px",
-          }}
-        >
-          <Image
-            src={flow}
-            alt={`Flow logo`}
-            width={36}
-            height={36}
-            style={{
-              marginRight: "10px",
-            }}
-          />
-          <h1
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#333",
-              margin: 0,
-            }}
-          >
-            FlowBets
-          </h1>
-        </div>
-
-        {/* Wallet Card
-        <div
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            padding: "20px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-            textAlign: "center",
-            width: "300px",
-            marginBottom: "20px",
-          }}
-        >
-        </div> */}
-
-        {/* Left Column: NFL Games */}
-        <div
-          style={{
-            backgroundColor: "#1c1e22",
-            borderRadius: "10px",
-            padding: "20px",
-            width: "45%",
-            margin: "0 auto",
-            color: "white",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <h2 style={{ marginBottom: "20px" }}>NFL Games - Week 7</h2>
-
-          {nflGames.map((game, index) => (
-            <div
-              key={index}
-              style={{
-                marginBottom: "20px",
-                borderBottom: "1px solid #374151",
-                paddingBottom: "10px",
-              }}
-            >
-              {/* Game Time and Volume */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "10px",
-                  color: "#9ca3af",
-                }}
-              >
-                <span>{game.time}</span>
-                <span>{game.volume} Vol.</span>
-              </div>
-
-              {/* Teams and Prices */}
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                {game.teams.map((team, teamIndex) => (
-                  <button
-                    key={teamIndex}
-                    onClick={() => selectTeam(game.time, team.name)}
-                    style={{
-                      backgroundColor:
-                        selectedGame?.game === game.time &&
-                        selectedGame?.team === team.name
-                          ? "#007aff"
-                          : "#1e293b",
-                      color: "white",
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: "none",
-                      width: "48%",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    {/* Logo Image */}
-                    <Image
-                      src={teamLogos[team.name]} // Logo URL from the teamLogos object
-                      alt={`${team.name} logo`}
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        marginRight: "10px",
-                      }}
-                    />
-                    <span>
-                      {team.name} ({team.record})
-                    </span>
-                    <span>{team.price}¢</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <BettingCard />
-        {/* Comment Section */}
+        {/* Cabeçalho com Logo e Botão Connect */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
-            padding: "20px",
+            alignItems: "center",
+            marginBottom: "40px",
+            padding: "0 20px",
           }}
         >
-          {/* Leave a Comment Panel */}
+          {/* Logo e Título */}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Image
+              src={flow}
+              alt="Logo Flow"
+              width={42}
+              height={42}
+              style={{ marginRight: "12px" }}
+            />
+            <h1 style={{
+              fontSize: "28px",
+              fontWeight: "bold",
+              color: "#1a1a1a",
+              margin: 0,
+            }}>
+              FlowBets
+            </h1>
+          </div>
+          <ConnectButton />
+        </div>
+
+        {/* Container Principal */}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          gap: "40px",
+          maxWidth: "1200px",
+          margin: "0 auto",
+          width: "100%",
+        }}>
+          {/* Coluna dos Jogos */}
           <div
             style={{
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              padding: "20px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              textAlign: "center",
-              width: "22%",
-              height: "400px",
-              marginRight: "100px",
-              marginTop: "-539px",
-              marginLeft: "-20px",
+              backgroundColor: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+              flex: "2",
             }}
           >
-            <h3>Leave a Comment</h3>
-            <form onSubmit={handleCommentSubmit}>
-              <textarea
-                value={comment}
-                onChange={handleCommentChange}
-                placeholder="Write your comment here..."
+            <h2 style={{ 
+              marginBottom: "24px",
+              fontSize: "24px",
+              color: "#1a1a1a",
+            }}>
+              Jogos Copa America - Semana 1
+            </h2>
+
+            {copaAmericaGames.map((game, index) => (
+              <div
+                key={index}
                 style={{
-                  width: "100%",
-                  height: "150px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  resize: "none",
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
+                  marginBottom: "24px",
+                  borderBottom: "1px solid #e5e7eb",
+                  paddingBottom: "20px",
                 }}
               >
-                Submit
-              </button>
-            </form>
-            {/* Display Comments */}
-            <div style={{ marginTop: "20px", textAlign: "left" }}>
-              {commentsList.length > 0 ? (
-                commentsList.map((c, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      marginBottom: "10px",
-                      borderBottom: "1px solid #ccc",
-                      paddingBottom: "5px",
-                    }}
-                  >
-                    {c}
-                  </div>
-                ))
-              ) : (
-                <p>No comments yet.</p>
-              )}
-            </div>
+                {/* Horário e Volume */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "12px",
+                    padding: "0 12px",
+                    color: "#666",
+                    backgroundColor: "#f9f9f9",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <span>Horário: {game.time}</span>
+                  <span>Volume: {game.volume}</span>
+                </div>
+
+                {/* Times */}
+                <div style={{ 
+                  display: "flex",
+                  gap: "12px",
+                  marginTop: "12px",
+                }}>
+                  {game.teams.map((team, teamIndex) => (
+                    <div
+                      key={teamIndex}
+                      style={{
+                        flex: "1",
+                        backgroundColor: selectedGame?.game === game.time &&
+                          selectedGame?.team === team.name
+                          ? "#d1fae5"
+                          : "#f3f4f6",
+                        color: selectedGame?.game === game.time &&
+                          selectedGame?.team === team.name
+                          ? "#065f46"
+                          : "#1f2937",
+                        padding: "16px",
+                        borderRadius: "12px",
+                        border: "1px solid #e5e7eb",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        overflow: "hidden",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                      }}
+                      onClick={() => selectTeam(game.time, team.name)}
+                    >
+                      <Image
+                        src={teamLogos[team.name]}
+                        alt={`Logo ${team.name}`}
+                        width={32}
+                        height={32}
+                        style={{ marginRight: "12px" }}
+                      />
+                      <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        flex: "1",
+                        overflow: "hidden", // Garante que o texto não saia do botão
+                      }}>
+                        <span style={{ fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.name}</span>
+                        <span style={{ fontSize: "14px", color: "#666" }}>
+                          Histórico: {team.record}
+                        </span>
+                      </div>
+                      <span style={{ 
+                        fontWeight: "bold",
+                        fontSize: "18px" 
+                      }}>
+                        ${team.price.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* BettingCard */}
+          <div style={{ flex: "1", display: "flex", justifyContent: "center" }}>
+            <BettingCard />
           </div>
         </div>
       </div>
     </>
   );
-};
+}
 
 export default Home;
