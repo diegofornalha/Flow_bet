@@ -137,18 +137,16 @@ export function BettingCard() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    setTransactionStatus(null); // Reset status before new transaction
+    setTransactionStatus(null);
     try {
-      const tx = await writeContract({
+      const hash = await writeContract({
         address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
         abi: abi,
         functionName: "placeBets",
         args: [BigInt(values.amount)],
       });
 
-      if (tx) { // Verifique se tx não é undefined
-        // Aguardar a confirmação da transação
-        await tx.wait();
+      if (typeof hash === "object" && hash !== null) {
         setTransactionStatus("Aposta enviada com sucesso!");
       } else {
         throw new Error("Transação não foi criada.");
