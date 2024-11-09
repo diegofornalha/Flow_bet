@@ -8,17 +8,20 @@ import { z } from "zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "./ui/form";
 
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import Image from "next/image";
+import brasilLogo from "@/src/public/assets/brasil.png";
+import argentinaLogo from "@/src/public/assets/argentina.png";
 
 const abi = [
   {
@@ -99,7 +102,11 @@ const abi = [
 ] as const;
 
 const formSchema = z.object({
-  amount: z.string().min(1).max(200),
+  amount: z
+    .string()
+    .min(1, { message: "A string deve conter pelo menos 1 caractere." })
+    .max(200)
+    .refine((value) => !isNaN(Number(value))),
 });
 
 export function BettingCard() {
@@ -109,16 +116,14 @@ export function BettingCard() {
     functionName: "viewVolume",
     args: [],
   });
-  console.log(data?.toString());
 
   const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
   const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
   const priceA = 100 * (tokenA / (tokenA + tokenB));
   const priceB = 100 * (tokenB / (tokenA + tokenB));
-  console.log(tokenA, tokenB, priceA, priceB);
 
   const { writeContract } = useWriteContract();
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -126,92 +131,174 @@ export function BettingCard() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    writeContract({
-      address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
-      abi: abi,
-      functionName: "placeBets",
-      args: [BigInt(values.amount)],
-    });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState(true);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    setTransactionStatus(null); // Reset status before new transaction
+    try {
+      const tx = await writeContract({
+        address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
+        abi: abi,
+        functionName: "placeBets",
+        args: [BigInt(values.amount)],
+      });
+
+      if (tx) { // Verifique se tx não é undefined
+        // Aguardar a confirmação da transação
+        await tx.wait();
+        setTransactionStatus("Aposta enviada com sucesso!");
+      } else {
+        throw new Error("Transação não foi criada.");
+      }
+    } catch (error) {
+      console.error("Erro ao executar o contrato:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const selectTeam = (team: string) => {
     setSelectedTeam(team);
   };
 
+  const calculateShares = (amount: number, price: number) => {
+    return price > 0 ? (amount * 100) / price : 0;
+  };
+
+  const calculatePotentialReturn = (amount: number, price: number) => {
+    if (price > 0) {
+      const shares = calculateShares(amount, price);
+      const potentialReturn = shares - amount;
+      return {
+        value: shares.toFixed(2),
+        percentage: ((potentialReturn / amount) * 100).toFixed(2),
+      };
+    }
+    return { value: "0.00", percentage: "0.00" };
+  };
+
+  const getSelectedPrice = () => {
+    return selectedTeam === "BRZ" ? priceA : selectedTeam === "ARZ" ? priceB : 0;
+  };
+
   return (
-    <Card className="w-[300px] bg-[#1c1e22] text-white shadow-lg fixed right-5 top-20">
+    <Card className="w-[300px] bg-white text-black shadow-lg fixed right-5 bottom-5 transition-all duration-300">
       <CardHeader>
-        <CardTitle className="mb-5">Outcome</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-bold">Boa Sorte</CardTitle>
+          <Button
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="text-sm bg-green-500 hover:bg-green-400 text-white transition-all duration-300"
+          >
+            {isMinimized ? "Expandir" : "Minimizar"}
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex justify-between mb-5">
+      {!isMinimized && (
+        <CardContent className="space-y-6">
+          <div className="flex justify-between items-center mb-5">
+            <div className="flex items-center">
+              <Image
+                src={brasilLogo}
+                alt="Logo Brasil"
+                width={24}
+                height={24}
+                className="mr-2"
+              />
+              <Button
+                onClick={() => selectTeam("BRZ")}
+                className={`w-[60%] transition-colors duration-300 ${
+                  selectedTeam === "BRZ" ? "bg-green-600 text-white" : "bg-gray-100 text-black"
+                } border border-gray-300 rounded-md shadow-sm hover:bg-green-500 hover:text-white flex items-center justify-center`}
+              >
+                <span className="block text-sm font-semibold">${priceA.toFixed(2)}</span>
+              </Button>
+            </div>
+            <div className="flex items-center">
+              <Image
+                src={argentinaLogo}
+                alt="Logo Argentina"
+                width={24}
+                height={24}
+                className="mr-2"
+              />
+              <Button
+                onClick={() => selectTeam("ARZ")}
+                className={`w-[60%] transition-colors duration-300 ${
+                  selectedTeam === "ARZ" ? "bg-green-600 text-white" : "bg-gray-100 text-black"
+                } border border-gray-300 rounded-md shadow-sm hover:bg-green-500 hover:text-white flex items-center justify-center`}
+              >
+                <span className="block text-sm font-semibold">${priceB.toFixed(2)}</span>
+              </Button>
+            </div>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormLabel>Quantia em Flow</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite a quantia"
+                        {...field}
+                        className={`bg-gray-100 border-gray-300 text-black ${
+                          fieldState.error ? "border-red-500" : ""
+                        }`}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Insira a quantia que deseja apostar em tokens Flow.
+                    </FormDescription>
+                    <FormMessage>
+                      {fieldState.error ? "Por favor, insira um número válido." : null}
+                    </FormMessage>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+
+          <div className="space-y-2">
+            <p>Preço Médio: ${getSelectedPrice().toFixed(2)}</p>
+            <p>
+              Ações:{" "}
+              {calculateShares(Number(form.watch("amount") || 0), getSelectedPrice()).toFixed(2)}
+            </p>
+            {Number(form.watch("amount") || 0) > 0 && (
+              <p>
+                Retorno Potencial: ${""}
+                {calculatePotentialReturn(Number(form.watch("amount") || 0), getSelectedPrice()).value}
+                {" ("}
+                <span className="text-green-600">
+                  {calculatePotentialReturn(Number(form.watch("amount") || 0), getSelectedPrice()).percentage}
+                </span>
+                {"%) "}
+              </p>
+            )}
+          </div>
+
           <Button
-            onClick={() => selectTeam("Patriots")}
-            className={`w-[48%] ${
-              selectedTeam === "Patriots" ? "bg-[#007aff]" : "bg-[#1e293b]"
+            onClick={() => onSubmit({ amount: form.getValues("amount") })}
+            className={`w-full bg-green-500 hover:bg-green-400 text-white transition-all duration-300 ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
+            disabled={isSubmitting}
           >
-            Patriots {priceA}¢
+            {isSubmitting ? "Processando..." : "Fazer Aposta"}
           </Button>
-          <Button
-            onClick={() => selectTeam("Jaguars")}
-            className={`w-[48%] ${
-              selectedTeam === "Jaguars" ? "bg-[#007aff]" : "bg-[#1e293b]"
-            }`}
-          >
-            Jaguars {priceB}¢
-          </Button>
-        </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount ($)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter amount"
-                      {...field}
-                      className="bg-[#2d2f34] border-[#374151] text-white"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-
-        <div className="space-y-2">
-          <p>Avg Price: {selectedTeam ? `${priceA}¢` : `${priceB}¢`}</p>
-          <p>
-            Shares:{" "}
-            {((Number(form.watch("amount") || 0) * 100) / priceA).toFixed(2)}
-          </p>
-          <p>
-            Potential return: ${""}
-            {((Number(form.watch("amount") || 0) * 100) / priceA).toFixed(2)}
-            {" ("}
-            {(((Number(form.watch("amount")) / priceA) * 100 -
-              Number(form.watch("amount"))) /
-              Number(form.watch("amount"))) *
-              100}
-            {"%) "}
-          </p>
-        </div>
-
-        <Button
-          type="submit"
-          onClick={form.handleSubmit(onSubmit)}
-          className="w-full bg-[#10b981] hover:bg-[#0d9668]"
-        >
-          Place Bet
-        </Button>
-      </CardContent>
+          {transactionStatus && (
+            <p className="mt-4 text-center text-sm text-gray-700">{transactionStatus}</p>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
