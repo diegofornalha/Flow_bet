@@ -1,23 +1,9 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import {
-  base,
-  mainnet,
-  optimism,
-  sepolia,
-  flowMainnet,
-  flowTestnet
-} from 'wagmi/chains';
+import { flowMainnet, flowTestnet } from 'wagmi/chains';
 
 export const config = getDefaultConfig({
-  appName: 'RainbowKit App',
-  projectId: 'YOUR_PROJECT_ID',
-  chains: [
-    mainnet,
-    optimism,
-    base,
-    sepolia,
-    flowMainnet, 
-    flowTestnet
-  ],
+  appName: 'FlowBets',
+  projectId: '5baff35427233022905a6376b28cfb13',
+  chains: [flowMainnet, flowTestnet],
   ssr: true,
 });
