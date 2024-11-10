@@ -119,8 +119,9 @@ export function BettingCard() {
 
   const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
   const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
-  const priceA = 100 * (tokenA / (tokenA + tokenB));
-  const priceB = 100 * (tokenB / (tokenA + tokenB));
+  const totalTokens = tokenA + tokenB;
+  const priceA = totalTokens > 0 ? 100 * (tokenA / totalTokens) : 0;
+  const priceB = totalTokens > 0 ? 100 * (tokenB / totalTokens) : 0;
 
   const { writeContract } = useWriteContract();
   const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
@@ -212,7 +213,7 @@ export function BettingCard() {
                   selectedTeam === "BRZ" ? "bg-green-600 text-white" : "bg-gray-100 text-black"
                 } border border-gray-300 rounded-md shadow-sm hover:bg-green-500 hover:text-white flex items-center justify-center`}
               >
-                <span className="block text-sm font-semibold">${priceA.toFixed(2)}</span>
+                <span className="block text-sm font-semibold">${isNaN(priceA) ? "0.00" : priceA.toFixed(2)}</span>
               </Button>
             </div>
             <div className="flex items-center">
@@ -229,7 +230,7 @@ export function BettingCard() {
                   selectedTeam === "ARZ" ? "bg-green-600 text-white" : "bg-gray-100 text-black"
                 } border border-gray-300 rounded-md shadow-sm hover:bg-green-500 hover:text-white flex items-center justify-center`}
               >
-                <span className="block text-sm font-semibold">${priceB.toFixed(2)}</span>
+                <span className="block text-sm font-semibold">${isNaN(priceB) ? "0.00" : priceB.toFixed(2)}</span>
               </Button>
             </div>
           </div>

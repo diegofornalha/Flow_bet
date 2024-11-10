@@ -105,8 +105,8 @@ function useNFLGames() {
   const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
   const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
   const total = tokenA + tokenB;
-  const priceA = 100 * (tokenA / (tokenA + tokenB));
-  const priceB = 100 * (tokenB / (tokenA + tokenB));
+  const priceA = total > 0 ? 100 * (tokenA / total) : 0;
+  const priceB = total > 0 ? 100 * (tokenB / total) : 0;
 
   return { total, priceA, priceB };
 }
@@ -227,7 +227,7 @@ const Home: NextPage = () => {
                   }}
                 >
                   <span>Horário: {game.time}</span>
-                  <span>Volume: {game.volume}</span>
+                  <span>Volume: {game.volume} FLOW</span>
                 </div>
 
                 {/* Times */}
@@ -284,7 +284,7 @@ const Home: NextPage = () => {
                         fontWeight: "bold",
                         fontSize: "18px" 
                       }}>
-                        ${team.price.toFixed(2)}
+                        ${isNaN(team.price) ? "0.00" : team.price.toFixed(2)}
                       </span>
                     </div>
                   ))}
