@@ -5,6 +5,13 @@ import {
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import hre from "hardhat";
+import { BaseContract, ContractFactory } from "ethers";
+
+interface ILock extends BaseContract {
+  withdraw(): Promise<void>;
+  unlockTime(): Promise<number>;
+  owner(): Promise<string>;
+}
 
 describe("Lock", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -21,7 +28,7 @@ describe("Lock", function () {
     const [owner, otherAccount] = await hre.ethers.getSigners();
 
     const Lock = await hre.ethers.getContractFactory("Lock");
-    const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+    const lock = await Lock.deploy(unlockTime, { value: lockedAmount }) as ILock;
 
     return { lock, unlockTime, lockedAmount, owner, otherAccount };
   }
@@ -78,7 +85,7 @@ describe("Lock", function () {
         await time.increaseTo(unlockTime);
 
         // We use lock.connect() to send a transaction from another account
-        await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
+        await expect((lock.connect(otherAccount) as ILock).withdraw()).to.be.revertedWith(
           "You aren't the owner"
         );
       });
