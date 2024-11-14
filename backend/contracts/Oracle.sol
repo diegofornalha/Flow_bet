@@ -27,7 +27,13 @@ abstract contract Oracle {
 
     /// @notice Retorna os detalhes de uma partida.
     /// @param _matchId O ID da partida.
-    /// @return Detalhes da partida, incluindo nome, participantes, data, resultado e vencedor.
+    /// @return id ID único da partida
+    /// @return name Nome da partida
+    /// @return participants Lista de participantes
+    /// @return participantCount Número de participantes
+    /// @return date Data da partida
+    /// @return outcome Resultado atual da partida
+    /// @return winner Índice do vencedor (-1 se não houver)
     function getMatch(
         bytes32 _matchId
     )
@@ -46,7 +52,13 @@ abstract contract Oracle {
 
     /// @notice Retorna a partida mais recente.
     /// @param _pending Indica se deve retornar a partida mais recente pendente.
-    /// @return Detalhes da partida mais recente.
+    /// @return id ID único da partida
+    /// @return name Nome da partida
+    /// @return participants Lista de participantes
+    /// @return participantCount Número de participantes
+    /// @return date Data da partida
+    /// @return outcome Resultado atual da partida
+    /// @return winner Índice do vencedor
     function getMostRecentMatch(
         bool _pending
     )
