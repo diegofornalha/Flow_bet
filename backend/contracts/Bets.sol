@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+/// @title Bets Contract
+/// @notice Este contrato permite criar partidas e apostar em times.
+/// @dev Todas as funções críticas são protegidas por um modificador onlyOwner.
 contract Bets {
     struct Match {
         uint teamAVolume;
@@ -18,15 +21,19 @@ contract Bets {
 
     address private immutable owner;
 
+    /// @notice Construtor que define o dono do contrato.
     constructor() {
         owner = msg.sender;
     }
 
+    /// @notice Modificador que garante que apenas o dono pode chamar certas funções.
     modifier onlyOwner() {
         require(msg.sender == owner, "Apenas o dono pode chamar esta funcao");
         _;
     }
 
+    /// @notice Cria uma nova partida com volumes iniciais para ambos os times.
+    /// @param matchId O ID único da partida.
     function createMatch(bytes32 matchId) public {
         require(matches[matchId].totalPool == 0, "Match already exists");
         matches[matchId].teamAVolume = initialVolume;
@@ -34,6 +41,10 @@ contract Bets {
         matches[matchId].totalPool = initialVolume * 2;
     }
 
+    /// @notice Coloca uma aposta em um time específico.
+    /// @param matchId O ID da partida.
+    /// @param amount A quantidade apostada.
+    /// @param team Um booleano indicando o time (true para Time A, false para Time B).
     function placeBet(
         bytes32 matchId,
         uint32 amount,
@@ -61,38 +72,60 @@ contract Bets {
         matchDetails.totalPool += amount;
     }
 
+    /// @notice Retorna o preço atual das ações para o Time A.
+    /// @param matchId O ID da partida.
+    /// @return O preço das ações para o Time A.
     function getTeamAPrice(bytes32 matchId) public view returns (uint) {
         Match storage matchDetails = matches[matchId];
         return matchDetails.teamAVolume / matchDetails.totalPool;
     }
 
+    /// @notice Retorna o preço atual das ações para o Time B.
+    /// @param matchId O ID da partida.
+    /// @return O preço das ações para o Time B.
     function getTeamBPrice(bytes32 matchId) public view returns (uint) {
         Match storage matchDetails = matches[matchId];
         return matchDetails.teamBVolume / matchDetails.totalPool;
     }
 
+    /// @notice Retorna a porcentagem do volume total para o Time A.
+    /// @param matchId O ID da partida.
+    /// @return A porcentagem do volume total para o Time A.
     function getTeamAPercentage(bytes32 matchId) public view returns (uint) {
         Match storage matchDetails = matches[matchId];
         return (matchDetails.teamAVolume * 100) / matchDetails.totalPool;
     }
 
+    /// @notice Retorna a porcentagem do volume total para o Time B.
+    /// @param matchId O ID da partida.
+    /// @return A porcentagem do volume total para o Time B.
     function getTeamBPercentage(bytes32 matchId) public view returns (uint) {
         Match storage matchDetails = matches[matchId];
         return (matchDetails.teamBVolume * 100) / matchDetails.totalPool;
     }
 
+    /// @notice Retorna o pool total para uma partida.
+    /// @param matchId O ID da partida.
+    /// @return O pool total para a partida.
     function getTotalPool(bytes32 matchId) public view returns (uint) {
         return matches[matchId].totalPool;
     }
 
+    /// @notice Retorna o volume atual para o Time A.
+    /// @param matchId O ID da partida.
+    /// @return O volume para o Time A.
     function getTeamAVolume(bytes32 matchId) public view returns (uint) {
         return matches[matchId].teamAVolume;
     }
 
+    /// @notice Retorna o volume atual para o Time B.
+    /// @param matchId O ID da partida.
+    /// @return O volume para o Time B.
     function getTeamBVolume(bytes32 matchId) public view returns (uint) {
         return matches[matchId].teamBVolume;
     }
 
+    /// @notice Permite que o dono retire o saldo do contrato.
     function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0, "Nenhum saldo para sacar");
@@ -100,6 +133,8 @@ contract Bets {
         payable(owner).transfer(balance);
     }
 
+    /// @notice Retorna o saldo atual do contrato.
+    /// @return O saldo do contrato.
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
     }
