@@ -2,23 +2,24 @@
 pragma solidity ^0.8.24;
 
 contract Migrations {
-  address public owner;
-  uint public last_completed_migration;
+    address public immutable owner;
+    uint public lastCompletedMigration;
 
-  constructor() {
-    owner = msg.sender;
-  }
+    constructor() {
+        owner = msg.sender;
+    }
 
-  modifier restricted() {
-    if (msg.sender == owner) _;
-  }
+    modifier restricted() {
+        require(msg.sender == owner, "Not authorized");
+        _;
+    }
 
-  function setCompleted(uint completed) public restricted {
-    last_completed_migration = completed;
-  }
+    function setCompleted(uint completed) public restricted {
+        lastCompletedMigration = completed;
+    }
 
-  function upgrade(address new_address) public restricted {
-    Migrations upgraded = Migrations(new_address);
-    upgraded.setCompleted(last_completed_migration);
-  }
+    function upgrade(address newAddress) public restricted {
+        Migrations upgraded = Migrations(newAddress);
+        upgraded.setCompleted(lastCompletedMigration);
+    }
 }

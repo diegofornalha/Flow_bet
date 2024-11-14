@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 contract BetPat {
-    uint256 amountA;
-    uint256 amountB;
-    bool teamA;
+    uint256 constant INITIAL_AMOUNT = 100;
+    uint256 private amountA;
+    uint256 private amountB;
+
     constructor() {
-        amountA = 100;
-        amountB = 100;
+        amountA = INITIAL_AMOUNT;
+        amountB = INITIAL_AMOUNT;
     }
 
     function getA() external view returns (uint256) {
@@ -23,9 +24,12 @@ contract BetPat {
     }
 
     function placeBets(uint256 amount) external {
+        require(amount > 0, "Quantidade deve ser maior que zero");
         amountA += amount;
     }
+
     function placeBetsJag(uint256 amount) external {
+        require(amount > 0, "Quantidade deve ser maior que zero");
         amountB += amount;
     }
 }
