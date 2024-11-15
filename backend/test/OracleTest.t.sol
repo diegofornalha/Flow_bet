@@ -7,18 +7,18 @@ import "../contracts/Oracle.sol";
 contract OracleTest is Test, Oracle {
     function getPendingMatches()
         public
-        view
+        pure
         override
         returns (bytes32[] memory)
     {
         return new bytes32[](0);
     }
 
-    function getAllMatches() public view override returns (bytes32[] memory) {
+    function getAllMatches() public pure override returns (bytes32[] memory) {
         return new bytes32[](0);
     }
 
-    function matchExists(bytes32 _matchId) public view override returns (bool) {
+    function matchExists(bytes32) public pure override returns (bool) {
         return false;
     }
 
@@ -26,7 +26,7 @@ contract OracleTest is Test, Oracle {
         bytes32 _matchId
     )
         public
-        view
+        pure
         override
         returns (
             bytes32 id,
@@ -42,10 +42,10 @@ contract OracleTest is Test, Oracle {
     }
 
     function getMostRecentMatch(
-        bool _pending
+        bool /* _pending */
     )
         public
-        view
+        pure
         override
         returns (
             bytes32 id,
@@ -66,7 +66,7 @@ contract OracleTest is Test, Oracle {
 
     function addTestData() public override {}
 
-    function testOracleConnection() public {
+    function testOracleConnection() public pure {
         assertTrue(testConnection());
     }
 }
