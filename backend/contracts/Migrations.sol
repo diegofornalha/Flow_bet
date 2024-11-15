@@ -30,4 +30,10 @@ contract Migrations {
         Migrations upgraded = Migrations(newAddress);
         upgraded.setCompleted(lastCompletedMigration);
     }
+
+    /// @notice Retorna o número da próxima migração a ser executada.
+    /// @return O número da próxima migração.
+    function getLastMigratedVersion() public view returns (uint256) {
+        return lastCompletedMigration + 1;
+    }
 }
