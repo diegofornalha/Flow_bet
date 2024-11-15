@@ -10,7 +10,7 @@ backend/
 │   ├── BetPat.sol
 │   ├── BetPayout.sol
 │   ├── Bets.sol
-│   ├── Disable.sol
+│   ├── Disableable.sol
 │   ├── Main.sol
 │   ├── Math.sol
 │   ├── Migrations.sol
