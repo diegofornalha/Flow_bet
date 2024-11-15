@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "./Math.sol";
 import "./Oracle.sol";
 import "./BetPayout.sol";
-import "./Disable.sol";
+import "./Disableable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Bets Contract

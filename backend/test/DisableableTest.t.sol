@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../contracts/Disable.sol";
+import "../contracts/Disableable.sol";
 
-contract DisableTest is Test {
+contract DisableableTest is Test {
     Disableable disableable;
 
     function setUp() public {
