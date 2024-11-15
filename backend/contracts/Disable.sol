@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "./Owner.sol";
 
 contract Disableable is Ownable {
-    bool disabled = false;
+    bool public disabled = false;
 
     modifier notDisabled() {
         require(!disabled, "Contract is disabled");
@@ -17,5 +17,9 @@ contract Disableable is Ownable {
 
     function enable() external onlyOwner {
         disabled = false;
+    }
+
+    function protectedFunction() external notDisabled {
+        // Lógica da função
     }
 }
