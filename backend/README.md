@@ -1,51 +1,66 @@
-## Passo a Passo
+## Foundry
 
-1. **Instalar Dependências**
+**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-   ```shell
-   npm install
-   ```
+Foundry consists of:
 
-2. **Compilar o Contrato**
+-   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
+-   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
+-   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
+-   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-   ```shell
-   npx hardhat compile
-   ```
+## Documentation
 
-3. **Executar Testes**
+https://book.getfoundry.sh/
 
-   ```shell
-   npx hardhat test
-   ```
+## Usage
 
-4. **Executar um Nó Local**
+### Build
 
-   ```shell
-   npx hardhat node
-   ```
-
-5. **Fazer Deploy do Contrato**
-
-   ```shell
-   npx hardhat ignition deploy ./ignition/modules/Lock.ts
-   ```
-
-6. **Obter Ajuda**
-   ```shell
-   npx hardhat help
-   ```
-
-## Variáveis de Ambiente
-
-Certifique-se de configurar suas variáveis de ambiente no arquivo `.env`. Por exemplo, defina sua chave privada:
-
-```
-FLOW_PRIVATE_KEY=seu_valor_aqui
+```shell
+$ forge build
 ```
 
-## Observações
+### Test
 
-- **Configuração de Rede**: O arquivo `hardhat.config.ts` está configurado para usar a rede de teste do Flow. Certifique-se de que as credenciais e URLs estão corretas.
-- **Segurança**: Não compartilhe seu arquivo `.env` ou qualquer informação sensível.
+```shell
+$ forge test
+```
 
-Siga esses passos para configurar e executar seu projeto Hardhat de forma eficaz. Se precisar de mais informações, consulte a documentação oficial do Hardhat.
+### Format
+
+```shell
+$ forge fmt
+```
+
+### Gas Snapshots
+
+```shell
+$ forge snapshot
+```
+
+### Anvil
+
+```shell
+$ anvil
+```
+
+### Deploy
+
+```shell
+$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+```
+
+### Cast
+
+```shell
+$ cast <subcommand>
+```
+
+### Help
+
+```shell
+$ forge --help
+$ anvil --help
+$ cast --help
+```
