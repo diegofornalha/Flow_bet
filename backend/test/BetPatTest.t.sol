@@ -11,7 +11,7 @@ contract BetPatTest is Test {
         betPat = new BetPat();
     }
 
-    function testInitialAmounts() public {
+    function testInitialAmounts() public view {
         uint256 amountA = betPat.getA();
         uint256 amountB = betPat.getB();
         assertEq(amountA, 100);

@@ -11,7 +11,7 @@ contract DisableTest is Test {
         disableable = new Disableable(address(this));
     }
 
-    function testInitialDisabledState() public {
+    function testInitialDisabledState() public view {
         bool initialState = disableable.disabled();
         assertEq(initialState, false, "Initial state should be false");
     }
