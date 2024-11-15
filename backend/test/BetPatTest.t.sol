@@ -17,4 +17,24 @@ contract BetPatTest is Test {
         assertEq(amountA, 100);
         assertEq(amountB, 100);
     }
+
+    function testPlaceBets() public {
+        uint256 initialAmountA = betPat.getA();
+        uint256 betAmount = 50;
+
+        betPat.placeBets(betAmount);
+
+        uint256 newAmountA = betPat.getA();
+        assertEq(newAmountA, initialAmountA + betAmount);
+    }
+
+    function testPlaceBetsJag() public {
+        uint256 initialAmountB = betPat.getB();
+        uint256 betAmount = 30;
+
+        betPat.placeBetsJag(betAmount);
+
+        uint256 newAmountB = betPat.getB();
+        assertEq(newAmountB, initialAmountB + betAmount);
+    }
 }

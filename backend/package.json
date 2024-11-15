@@ -360,7 +360,8 @@
     "mocha": "^10.7.3"
   },
   "scripts": {
-    "test": "mocha"
+    "test:foundry": "forge test",
+    "test:hardhat": "npx hardhat test"
   },
   "keywords": [],
   "author": "",
