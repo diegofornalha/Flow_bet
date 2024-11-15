@@ -15,7 +15,6 @@ backend/
 │   ├── Math.sol
 │   ├── Migrations.sol
 │   ├── Oracle.sol
-│   └── Owner.sol
 ```
 
 ## Fluxo de Deploy
