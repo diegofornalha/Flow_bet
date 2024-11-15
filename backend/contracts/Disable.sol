@@ -22,4 +22,8 @@ contract Disableable is Ownable {
     function protectedFunction() external notDisabled {
         // Lógica da função
     }
+
+    function anotherProtectedFunction() public view notDisabled {
+        // função exemplo para testar o modificador
+    }
 }
