@@ -1,3 +1,5 @@
 node_modules
 /.next
 /backend/bin
+/backend/out
+/backend/out

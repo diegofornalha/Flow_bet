@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+import "./Math.sol";
+import "./Oracle.sol";
+import "./BetPayout.sol";
+import "./Disable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 /// @title Bets Contract
 /// @notice Este contrato permite criar partidas e apostar em times.
 /// @dev Todas as funções críticas são protegidas por um modificador onlyOwner.
-contract Bets {
+contract Bets is Disableable {
+    using Math for uint256;
+    Oracle private oracle;
+    BetPayout private betPayout;
+
     struct Match {
         uint teamAVolume;
         uint teamBVolume;
@@ -19,22 +29,19 @@ contract Bets {
 
     uint public constant initialVolume = 100 wei;
 
-    address private immutable owner;
-
     /// @notice Construtor que define o dono do contrato.
-    constructor() {
-        owner = msg.sender;
-    }
-
-    /// @notice Modificador que garante que apenas o dono pode chamar certas funções.
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Apenas o dono pode chamar esta funcao");
-        _;
+    constructor(
+        address _oracle,
+        address _betPayout,
+        address initialOwner
+    ) Disableable(initialOwner) {
+        oracle = Oracle(_oracle);
+        betPayout = BetPayout(_betPayout);
     }
 
     /// @notice Cria uma nova partida com volumes iniciais para ambos os times.
     /// @param matchId O ID único da partida.
-    function createMatch(bytes32 matchId) public {
+    function createMatch(bytes32 matchId) public onlyOwner {
         require(matches[matchId].totalPool == 0, "Match already exists");
         matches[matchId].teamAVolume = initialVolume;
         matches[matchId].teamBVolume = initialVolume;
@@ -130,7 +137,7 @@ contract Bets {
         uint256 balance = address(this).balance;
         require(balance > 0, "Nenhum saldo para sacar");
 
-        payable(owner).transfer(balance);
+        payable(owner()).transfer(balance);
     }
 
     /// @notice Retorna o saldo atual do contrato.

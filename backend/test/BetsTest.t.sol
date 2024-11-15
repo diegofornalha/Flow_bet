@@ -8,7 +8,10 @@ contract BetsTest is Test {
     Bets bets;
 
     function setUp() public {
-        bets = new Bets();
+        address oracleAddress = address(0x123);
+        address betPayoutAddress = address(0x456);
+        address initialOwner = address(this);
+        bets = new Bets(oracleAddress, betPayoutAddress, initialOwner);
     }
 
     function testCreateMatch() public {
