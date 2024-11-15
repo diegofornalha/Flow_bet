@@ -7,7 +7,7 @@ Este projeto consiste em um conjunto de contratos inteligentes desenvolvidos em 
 - **BetPat.sol**: Contrato responsável por permitir a visualização e a colocação de apostas em dois times distintos.
 - **BetPayout.sol**: Gerencia o processo de pagamento das apostas e a distribuição dos ganhos de forma justa.
 - **Bets.sol**: Habilita a criação de novas partidas e a realização de apostas nos times participantes.
-- **Disable.sol**: Oferece funcionalidades para desativar e reativar contratos conforme necessário.
+- **Disableable.sol**: Oferece funcionalidades para desativar e reativar contratos conforme necessário.
 - **Oracle.sol**: Fornece funcionalidades de oráculo para obter informações atualizadas sobre as partidas.
 
 ## Pré-requisitos
