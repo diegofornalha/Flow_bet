@@ -1,66 +1,58 @@
-## Foundry
+# Projeto de Apostas em Solidity
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Este projeto consiste em um conjunto de contratos inteligentes desenvolvidos em Solidity, projetados para gerenciar apostas em eventos esportivos. As funcionalidades incluem a criação de partidas, a colocação de apostas e a gestão de pagamentos de forma eficiente e segura.
 
-Foundry consists of:
+## Visão Geral
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- **BetPat.sol**: Contrato responsável por permitir a visualização e a colocação de apostas em dois times distintos.
+- **BetPayout.sol**: Gerencia o processo de pagamento das apostas e a distribuição dos ganhos de forma justa.
+- **Bets.sol**: Habilita a criação de novas partidas e a realização de apostas nos times participantes.
+- **Disable.sol**: Oferece funcionalidades para desativar e reativar contratos conforme necessário.
+- **Oracle.sol**: Fornece funcionalidades de oráculo para obter informações atualizadas sobre as partidas.
 
-## Documentation
+## Pré-requisitos
 
-https://book.getfoundry.sh/
+- Node.js e npm: Necessários para o gerenciamento de pacotes e execução de scripts.
+- Foundry: Utilizado para testes e desenvolvimento de contratos em Solidity.
+- OpenZeppelin Contracts: Biblioteca de contratos padrão para Solidity.
 
-## Usage
+## Instalação
 
-### Build
+1. Clone o repositório:
 
-```shell
-$ forge build
+   ```bash
+   git clone https://github.com/seu-usuario/seu-repositorio.git
+   cd seu-repositorio
+   ```
+
+2. Instale as dependências do Node.js:
+
+   ```bash
+   npm install
+   ```
+
+3. Instale o Foundry:
+   Siga as instruções de instalação disponíveis no [site oficial do Foundry](https://getfoundry.sh/).
+
+4. Instale os contratos da OpenZeppelin:
+   ```bash
+   npm install @openzeppelin/contracts
+   ```
+
+## Uso
+
+### Testes
+
+Para compilar os contratos, use o comando:
+
+```bash
+forge build
 ```
 
-### Test
+### Executar os testes
 
-```shell
-$ forge test
-```
+Para executar os testes, use o comando:
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+forge test
 ```
