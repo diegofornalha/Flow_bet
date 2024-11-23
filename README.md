@@ -12,7 +12,6 @@ backend/
 │   ├── Bets.sol
 │   ├── Disableable.sol
 │   ├── Main.sol
-│   ├── Math.sol
 │   ├── Migrations.sol
 │   ├── Oracle.sol
 ```
@@ -28,7 +27,6 @@ Para implantar corretamente os contratos, siga a ordem abaixo:
 
 2. **Contratos de Infraestrutura**
 
-   - Deploy do `Math.sol` - Biblioteca de operações matemáticas
    - Deploy do `Oracle.sol` - Implementação do Oracle para dados externos
    - Deploy do `Migrations.sol` (se estiver usando Truffle)
 
@@ -81,5 +79,5 @@ Para verificar se o deploy foi bem-sucedido:
 
 - Todos os contratos herdam funcionalidades de controle de acesso do `Owner.sol`
 - O sistema pode ser pausado através do contrato `Disable.sol`
-- Operações matemáticas são protegidas pela biblioteca `Math.sol`
+- Operações matemáticas são protegidas pela biblioteca `Math.sol` no openzeppelin
 ```

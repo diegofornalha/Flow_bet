@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import "./Math.sol";
 import "./Oracle.sol";
 import "./BetPayout.sol";
 import "./Disableable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Bets Contract
