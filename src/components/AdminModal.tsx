@@ -5,6 +5,9 @@ import { OracleTab } from "./admin/OracleTab";
 import { useAdmin } from "@/src/hooks/useAdmin";
 import { useAccount } from "wagmi";
 import { BetsTab } from "./admin/BetsTab";
+import { BetPayoutTab } from "./admin/BetPayoutTab";
+import { DisableTab } from "./admin/DisableTab";
+import { TokenTab } from "./admin/TokenTab";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -47,12 +50,13 @@ export function AdminModal({ isOpen, onOpenChange }: AdminModalProps) {
         </DialogHeader>
 
         <Tabs defaultValue="bets" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="bets">Bets</TabsTrigger>
             <TabsTrigger value="betpat">BetPat</TabsTrigger>
             <TabsTrigger value="oracle">Oracle</TabsTrigger>
             <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="disable">Sistema</TabsTrigger>
+            <TabsTrigger value="token">Mudar Token</TabsTrigger>
           </TabsList>
           
           <TabsContent value="bets">
@@ -67,7 +71,17 @@ export function AdminModal({ isOpen, onOpenChange }: AdminModalProps) {
             <OracleTab />
           </TabsContent>
           
-          {/* Adicione os outros TabsContent aqui */}
+          <TabsContent value="payout">
+            <BetPayoutTab />
+          </TabsContent>
+          
+          <TabsContent value="disable">
+            <DisableTab />
+          </TabsContent>
+          
+          <TabsContent value="token">
+            <TokenTab />
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
