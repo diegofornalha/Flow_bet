@@ -56,3 +56,67 @@ Para executar os testes, use o comando:
 ```bash
 forge test
 ```
+
+### Executar os testes de fuzzing
+
+```bash
+   forge test --match-test testFuzz
+```
+
+### Executar o relatório de cobertura
+
+```bash
+forge coverage
+```
+
+# Relatório detalhado de gas
+
+forge test --gas-report
+
+# Relatório de cobertura em formato LCOV
+
+forge coverage --report lcov
+
+# Relatório de cobertura em HTML
+
+forge coverage --report lcov && genhtml lcov.info -o coverage
+
+# Relatório com debug traces
+
+forge test -vvvv
+
+# Relatório de gas por função
+
+forge snapshot
+
+# Relatório de gas comparativo
+
+forge snapshot --diff
+
+# Relatório de tamanho dos contratos
+
+forge build --sizes
+
+# Relatório de dependências
+
+forge tree
+
+# Relatório de verificação de segurança
+
+forge audit
+
+# Filtrar por contrato específico
+
+forge test --match-contract ContractName --gas-report
+
+# Filtrar por teste específico
+
+forge test --match-test testName --gas-report
+
+# Relatório com limite de gas
+
+forge test --gas-report --gas-limit 1000000
+
+# Exportar relatório para arquivo
+
+forge test --gas-report > gas-report.txt
