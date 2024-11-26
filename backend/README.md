@@ -124,3 +124,5 @@ forge test --gas-report > gas-report.txt
 # Relatório de cobertura por contrato
 
 forge coverage --match-contract BetPayoutTest --report summary | grep BetPayout
+
+forge coverage --match-contract BetPatTest --report summary | grep BetPat
