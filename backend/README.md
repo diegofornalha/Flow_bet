@@ -120,3 +120,7 @@ forge test --gas-report --gas-limit 1000000
 # Exportar relatório para arquivo
 
 forge test --gas-report > gas-report.txt
+
+# Relatório de cobertura por contrato
+
+forge coverage --match-contract BetPayoutTest --report summary | grep BetPayout
