@@ -43,6 +43,8 @@ contract Bets is Disableable {
     /// @param matchId O ID único da partida.
     function createMatch(bytes32 matchId) public onlyOwner {
         require(matches[matchId].totalPool == 0, "Match already exists");
+        require(oracle.matchExists(matchId), "Match does not exist in Oracle");
+
         matches[matchId].teamAVolume = initialVolume;
         matches[matchId].teamBVolume = initialVolume;
         matches[matchId].totalPool = initialVolume * 2;

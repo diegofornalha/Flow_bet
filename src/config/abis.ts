@@ -32,24 +32,31 @@ export const betPayoutAbi = [
 export const oracleAbi = [
   {
     inputs: [],
-    name: "isActive",
+    name: "getAllMatches",
+    outputs: [
+      {
+        components: [
+          { internalType: "bytes32", name: "id", type: "bytes32" },
+          { internalType: "string", name: "teamA", type: "string" },
+          { internalType: "string", name: "teamB", type: "string" },
+          { internalType: "bool", name: "exists", type: "bool" },
+          { internalType: "bool", name: "finished", type: "bool" },
+          { internalType: "bool", name: "teamAWon", type: "bool" }
+        ],
+        internalType: "struct Oracle.Match[]",
+        name: "",
+        type: "tuple[]"
+      }
+    ],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "matchId", type: "bytes32" }],
+    name: "matchExists",
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "activate",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "deactivate",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    type: "function"
   }
 ] as const;
 

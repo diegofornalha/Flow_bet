@@ -62,12 +62,17 @@ export function BettingModal({ isOpen, onOpenChange }: BettingModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="em-breve" className="w-full">
+        <Tabs defaultValue="brasil-argentina" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="em-breve">Em Breve</TabsTrigger>
             <TabsTrigger value="brasil-argentina">Brasil vs Argentina</TabsTrigger>
+            <TabsTrigger value="em-breve">Em Breve</TabsTrigger>
             <TabsTrigger value="proximos">Próximos Jogos</TabsTrigger>
           </TabsList>
+
+          {/* Tab Brasil vs Argentina */}
+          <TabsContent value="brasil-argentina">
+            <BettingCard />
+          </TabsContent>
 
           {/* Tab Em Breve */}
           <TabsContent value="em-breve">
@@ -115,11 +120,6 @@ export function BettingModal({ isOpen, onOpenChange }: BettingModalProps) {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Tab Brasil vs Argentina */}
-          <TabsContent value="brasil-argentina">
-            <BettingCard />
           </TabsContent>
 
           {/* Tab Próximos Jogos */}

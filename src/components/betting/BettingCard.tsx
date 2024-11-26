@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useContractRead, useContractWrite } from "wagmi";
+import { useContractRead, useContractWrite, useWaitForTransaction } from "wagmi";
 import { z } from "zod";
 import { CONTRACTS } from "@/src/config/contracts";
 import {
@@ -57,7 +57,6 @@ const formSchema = z.object({
 
 export function BettingCard() {
   const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
 
   const { data } = useContractRead({
@@ -98,10 +97,25 @@ export function BettingCard() {
 
   const prices = calculatePrices();
 
-  const { write: writeContract } = useContractWrite({
+  const { 
+    write: placeBet,
+    data: placeBetData,
+    isLoading: isPlacingBet,
+    isSuccess: placeBetSuccess,
+    error: placeBetError 
+  } = useContractWrite({
     address: CONTRACTS.BETS,
     abi,
     functionName: selectedTeam === "BRZ" ? "placeBets" : "placeBetsJag",
+    mode: 'prepared',
+  });
+
+  const { 
+    isLoading: isWaitingTransaction,
+    isSuccess: transactionSuccess,
+    error: transactionError
+  } = useWaitForTransaction({
+    hash: placeBetData?.hash,
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -112,18 +126,12 @@ export function BettingCard() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true);
-    setTransactionStatus(null);
     try {
-      await writeContract({
+      placeBet?.({
         args: [BigInt(values.amount)],
       });
-      setTransactionStatus("Aposta enviada com sucesso!");
     } catch (error) {
-      console.error("Erro ao executar o contrato:", error);
-      setTransactionStatus("Erro ao processar aposta. Tente novamente.");
-    } finally {
-      setIsSubmitting(false);
+      console.error("Erro ao enviar transação:", error);
     }
   }
 
@@ -135,10 +143,53 @@ export function BettingCard() {
     return selectedTeam === "BRZ" ? prices.oddsA : prices.oddsB;
   };
 
+  const getTransactionStatus = () => {
+    if (isPlacingBet || isWaitingTransaction) {
+      return (
+        <div className="mt-4 text-center">
+          <div className="animate-pulse text-blue-600">
+            {isPlacingBet ? "Confirmando aposta..." : "Processando transação..."}
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Por favor, aguarde a confirmação da sua carteira
+          </p>
+        </div>
+      );
+    }
+
+    if (placeBetError || transactionError) {
+      return (
+        <div className="mt-4 text-center text-red-600">
+          <p>Erro ao processar aposta:</p>
+          <p className="text-sm">
+            {(placeBetError || transactionError)?.message || "Tente novamente"}
+          </p>
+        </div>
+      );
+    }
+
+    if (transactionSuccess) {
+      return (
+        <div className="mt-4 text-center text-green-600">
+          <p className="font-bold">Aposta confirmada com sucesso!</p>
+          <a 
+            href={`https://evm-testnet.flowscan.org/tx/${placeBetData?.hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm underline mt-1 block"
+          >
+            Ver transação no FlowScan
+          </a>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <Card className="w-full bg-white text-black shadow-lg">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Faça sua Aposta</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex justify-between items-center">
@@ -219,18 +270,16 @@ export function BettingCard() {
             <Button
               type="submit"
               className={`w-full bg-green-500 hover:bg-green-400 text-white transition-all duration-300 ${
-                isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                (isPlacingBet || isWaitingTransaction) ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              disabled={isSubmitting}
+              disabled={isPlacingBet || isWaitingTransaction}
             >
-              {isSubmitting ? "Processando..." : "Fazer Aposta"}
+              {isPlacingBet || isWaitingTransaction ? "Processando..." : "Fazer Aposta"}
             </Button>
           </form>
         </Form>
 
-        {transactionStatus && (
-          <p className="mt-4 text-center text-sm text-gray-700">{transactionStatus}</p>
-        )}
+        {getTransactionStatus()}
       </CardContent>
     </Card>
   );

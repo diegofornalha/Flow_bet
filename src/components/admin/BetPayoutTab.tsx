@@ -71,6 +71,7 @@ export function BetPayoutTab() {
     address: CONTRACTS.BETPAYOUT,
     abi: betPayoutAbi,
     functionName: "payOutWinnings",
+    mode: 'prepared'
   });
 
   // Form para pagamento
@@ -90,12 +91,25 @@ export function BetPayoutTab() {
     },
   });
 
+  // Adicione este hook no nível superior do componente
+  const { data: pendingData, refetch: refetchPending } = useContractRead({
+    address: CONTRACTS.BETPAYOUT,
+    abi: betPayoutAbi,
+    functionName: "pendingPayouts",
+    enabled: false, // Não executar automaticamente
+  });
+
   // Pagar ganhos
   const handlePayout = async (values: z.infer<typeof payoutSchema>) => {
     try {
+      if (!payoutWrite) {
+        setStatus("Erro: Contrato não está pronto");
+        return;
+      }
+      
       setIsLoading(true);
       await payoutWrite({
-        args: [values.userAddress as `0x${string}`, BigInt(values.amount)],
+        args: [values.userAddress as `0x${string}`, BigInt(values.amount)]
       });
       setStatus("Pagamento realizado com sucesso!");
       payoutForm.reset();
@@ -110,14 +124,10 @@ export function BetPayoutTab() {
   // Verificar pagamentos pendentes
   const handleCheckPending = async (values: z.infer<typeof checkPayoutSchema>) => {
     try {
-      const { data } = await useContractRead({
-        address: CONTRACTS.BETPAYOUT,
-        abi: betPayoutAbi,
-        functionName: "pendingPayouts",
-        args: [values.userAddress as `0x${string}`],
+      await refetchPending({ 
+        throwOnError: true 
       });
-      
-      setPendingAmount(data ? data.toString() : "0");
+      setPendingAmount(pendingData ? pendingData.toString() : "0");
       setStatus("Consulta realizada com sucesso!");
     } catch (error) {
       console.error("Erro ao consultar pagamentos pendentes:", error);

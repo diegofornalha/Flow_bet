@@ -8,7 +8,7 @@ abstract contract Oracle {
         Pending, // A partida ainda não foi decidida
         Underway, // A partida começou e está em andamento
         Draw, // A partida terminou sem um vencedor claro
-        Decided // Índice do participante que é o vencedor
+        Decided // A partida terminou com um vencedor definido
     }
 
     /// @notice Retorna as partidas pendentes.
