@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useContractRead, useContractWrite } from "wagmi";
 import { z } from "zod";
-
+import { CONTRACTS } from "@/src/config/contracts";
 import {
   Form,
   FormControl,
@@ -13,94 +13,38 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "./ui/form";
-
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+} from "../ui/form";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import Image from "next/image";
-import brasilLogo from "@/src/public/assets/brasil.png";
-import argentinaLogo from "@/src/public/assets/argentina.png";
-import { CONTRACTS } from "@/src/config/contracts";
-import { betPayoutAbi } from "@/src/config/abis";
 
 const abi = [
   {
     inputs: [],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    inputs: [],
-    name: "getA",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getB",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "viewVolume",
     outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+      { internalType: "uint256", name: "", type: "uint256" },
+      { internalType: "uint256", name: "", type: "uint256" }
     ],
     stateMutability: "view",
     type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
+    inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "placeBets",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
+    inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "placeBetsJag",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
-  },
+  }
 ] as const;
 
 const formSchema = z.object({
@@ -174,17 +118,7 @@ export function BettingCard() {
       await writeContract({
         args: [BigInt(values.amount)],
       });
-
       setTransactionStatus("Aposta enviada com sucesso!");
-      
-      // Verificar pagamento
-      const { data: payoutResult } = await useContractRead({
-        address: CONTRACTS.BETPAYOUT,
-        abi: betPayoutAbi,
-        functionName: "checkPayout",
-      });
-      
-      console.log("Status do pagamento:", payoutResult);
     } catch (error) {
       console.error("Erro ao executar o contrato:", error);
       setTransactionStatus("Erro ao processar aposta. Tente novamente.");
@@ -197,26 +131,6 @@ export function BettingCard() {
     setSelectedTeam(team);
   };
 
-  const calculateShares = (amount: number, price: number) => {
-    return price > 0 ? (amount * 100) / price : 0;
-  };
-
-  const calculatePotentialReturn = (amount: number, price: number) => {
-    if (price > 0) {
-      const shares = calculateShares(amount, price);
-      const potentialReturn = shares - amount;
-      return {
-        value: shares.toFixed(2),
-        percentage: ((potentialReturn / amount) * 100).toFixed(2),
-      };
-    }
-    return { value: "0.00", percentage: "0.00" };
-  };
-
-  const getSelectedPrice = () => {
-    return selectedTeam === "BRZ" ? prices.priceA : prices.priceB;
-  };
-
   const getSelectedOdds = () => {
     return selectedTeam === "BRZ" ? prices.oddsA : prices.oddsB;
   };
@@ -227,36 +141,10 @@ export function BettingCard() {
         <CardTitle className="text-xl font-bold">Faça sua Aposta</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Volume Total de Apostas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Brasil</p>
-                  <p className="text-lg font-bold">{tokenA} FLOW</p>
-                  <p className="text-sm text-green-600">Odds: {prices.oddsA}x</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Argentina</p>
-                  <p className="text-lg font-bold">{tokenB} FLOW</p>
-                  <p className="text-sm text-green-600">Odds: {prices.oddsB}x</p>
-                </div>
-              </div>
-              <div className="pt-4 border-t">
-                <p className="text-sm text-gray-500">Volume Total</p>
-                <p className="text-xl font-bold">{totalTokens} FLOW</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Image
-              src={brasilLogo}
+              src="/assets/images/brasil.png"
               alt="Logo Brasil"
               width={32}
               height={32}
@@ -273,7 +161,7 @@ export function BettingCard() {
           </div>
           <div className="flex items-center">
             <Image
-              src={argentinaLogo}
+              src="/assets/images/argentina.png"
               alt="Logo Argentina"
               width={32}
               height={32}

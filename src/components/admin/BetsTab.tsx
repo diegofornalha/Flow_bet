@@ -21,7 +21,11 @@ import { generateMatchId } from "@/src/utils/generateId";
 
 const betsAbi = [
   {
-    inputs: [{ internalType: "bytes32", name: "matchId", type: "bytes32" }],
+    inputs: [
+      { internalType: "bytes32", name: "matchId", type: "bytes32" },
+      { internalType: "string", name: "teamA", type: "string" },
+      { internalType: "string", name: "teamB", type: "string" }
+    ],
     name: "createMatch",
     outputs: [],
     stateMutability: "nonpayable",
@@ -70,6 +74,8 @@ const betsAbi = [
 
 const createMatchSchema = z.object({
   matchId: z.string().startsWith("0x", "ID deve começar com 0x"),
+  teamA: z.string().default("Brasil"),
+  teamB: z.string().default("Argentina"),
 });
 
 type FormData = z.infer<typeof createMatchSchema>;
@@ -101,13 +107,16 @@ export function BetsTab() {
   });
 
   // Criar nova partida
-  const handleCreateMatch = async (values: FormData) => {
+  const handleCreateMatch = async (values: z.infer<typeof createMatchSchema>) => {
     try {
       setIsLoading(true);
-      const hash = await writeContract({
-        args: [values.matchId as `0x${string}`],
+      await writeContract({
+        args: [
+          values.matchId as `0x${string}`,
+          values.teamA,
+          values.teamB
+        ],
       });
-
       setStatus("Partida criada com sucesso!");
       form.reset();
     } catch (error) {
@@ -173,6 +182,38 @@ export function BetsTab() {
                   </FormItem>
                 )}
               />
+
+              {/* Times */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="teamA"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time A</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Brasil" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="teamB"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time B</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Argentina" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Criando..." : "Criar Partida"}
               </Button>

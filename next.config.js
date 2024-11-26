@@ -11,7 +11,12 @@ const nextConfig = {
       };
     }
     config.externals.push("pino-pretty", "lokijs", "encoding");
+
+    // Remove a resolução específica do WalletConnect
     return config;
+  },
+  experimental: {
+    esmExternals: true, // Alterado para true
   },
 };
 

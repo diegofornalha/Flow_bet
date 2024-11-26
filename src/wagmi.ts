@@ -1,6 +1,7 @@
 import { getDefaultWallets } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, Chain } from 'wagmi';
+import { configureChains, createClient, Chain } from 'wagmi';
 import { publicProvider } from 'wagmi/providers/public';
+import { mainnet, goerli } from 'wagmi/chains';
 
 // Definindo Flow Mainnet EVM
 const flowMainnet: Chain = {
@@ -13,8 +14,12 @@ const flowMainnet: Chain = {
     symbol: 'FLOW',
   },
   rpcUrls: {
-    public: { http: ['https://mainnet.evm.nodes.onflow.org'] },
-    default: { http: ['https://mainnet.evm.nodes.onflow.org'] },
+    default: {
+      http: ['https://mainnet.evm.nodes.onflow.org'],
+    },
+    public: {
+      http: ['https://mainnet.evm.nodes.onflow.org'],
+    },
   },
   blockExplorers: {
     default: { name: 'FlowScan', url: 'https://evm.flowscan.io' },
@@ -33,8 +38,12 @@ const flowTestnet: Chain = {
     symbol: 'FLOW',
   },
   rpcUrls: {
-    public: { http: ['https://testnet.evm.nodes.onflow.org'] },
-    default: { http: ['https://testnet.evm.nodes.onflow.org'] },
+    default: {
+      http: ['https://testnet.evm.nodes.onflow.org'],
+    },
+    public: {
+      http: ['https://testnet.evm.nodes.onflow.org'],
+    },
   },
   blockExplorers: {
     default: { name: 'FlowScan', url: 'https://evm-testnet.flowscan.io' },
@@ -42,27 +51,24 @@ const flowTestnet: Chain = {
   testnet: true,
 };
 
-const { chains, publicClient } = configureChains(
+const { chains, provider, webSocketProvider } = configureChains(
   [flowMainnet, flowTestnet],
   [publicProvider()]
 );
 
 const { connectors } = getDefaultWallets({
   appName: 'FlowBets',
-  projectId: '5baff35427233022905a6376b28cfb13',
   chains,
 });
 
-export const config = createConfig({
+export const client = createClient({
   autoConnect: true,
   connectors,
-  publicClient,
+  provider,
+  webSocketProvider,
 });
 
 export const rainbowConfig = {
   chains,
-  initialChain: flowTestnet, // Define Flow Testnet como padrão
-  showRecentTransactions: true,
-  appName: 'FlowBets',
-  coolMode: true,
+  initialChain: flowTestnet,
 };
