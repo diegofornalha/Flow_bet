@@ -55,79 +55,83 @@ export function BettingModal({ isOpen, onOpenChange }: BettingModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl font-bold mb-4">
             Faça sua Aposta
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="brasil-argentina" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="brasil-argentina" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="flex-shrink-0 grid w-full grid-cols-3">
             <TabsTrigger value="brasil-argentina">Brasil vs Argentina</TabsTrigger>
             <TabsTrigger value="em-breve">Em Breve</TabsTrigger>
             <TabsTrigger value="proximos">Próximos Jogos</TabsTrigger>
           </TabsList>
 
-          {/* Tab Brasil vs Argentina */}
-          <TabsContent value="brasil-argentina">
-            <BettingCard />
-          </TabsContent>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="p-1">
+              {/* Tab Brasil vs Argentina */}
+              <TabsContent value="brasil-argentina" className="mt-0">
+                <BettingCard />
+              </TabsContent>
 
-          {/* Tab Em Breve */}
-          <TabsContent value="em-breve">
-            <Card className="mb-6 relative">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Brasil</h3>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600">Volume: {tokenA} FLOW</p>
-                      <p className="text-sm text-gray-600">Odds: {odds.oddsA}x</p>
-                      <p className="text-sm text-gray-600">
-                        Participação: {totalTokens ? ((tokenA / totalTokens) * 100).toFixed(1) : 0}%
-                      </p>
+              {/* Tab Em Breve */}
+              <TabsContent value="em-breve" className="mt-0">
+                <Card className="mb-6 relative">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Brasil</h3>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Volume: {tokenA} FLOW</p>
+                          <p className="text-sm text-gray-600">Odds: {odds.oddsA}x</p>
+                          <p className="text-sm text-gray-600">
+                            Participação: {totalTokens ? ((tokenA / totalTokens) * 100).toFixed(1) : 0}%
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">Argentina</h3>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Volume: {tokenB} FLOW</p>
+                          <p className="text-sm text-gray-600">Odds: {odds.oddsB}x</p>
+                          <p className="text-sm text-gray-600">
+                            Participação: {totalTokens ? ((tokenB / totalTokens) * 100).toFixed(1) : 0}%
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Argentina</h3>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600">Volume: {tokenB} FLOW</p>
-                      <p className="text-sm text-gray-600">Odds: {odds.oddsB}x</p>
+                    <div className="mt-4 pt-4 border-t flex justify-between items-center">
                       <p className="text-sm text-gray-600">
-                        Participação: {totalTokens ? ((tokenB / totalTokens) * 100).toFixed(1) : 0}%
+                        <span className="font-semibold">Volume Total:</span> {totalTokens} FLOW
                       </p>
+                      <Button 
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold"
+                        size="lg"
+                      >
+                        APOSTAR
+                      </Button>
                     </div>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold">Volume Total:</span> {totalTokens} FLOW
-                  </p>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold"
-                    size="lg"
-                  >
-                    APOSTAR
-                  </Button>
-                </div>
 
-                {/* Overlay "Em Breve" */}
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
-                  <div className="text-white text-3xl font-bold tracking-wider animate-pulse">
-                    EM BREVE
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    {/* Overlay "Em Breve" */}
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center">
+                      <div className="text-white text-3xl font-bold tracking-wider animate-pulse">
+                        EM BREVE
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          {/* Tab Próximos Jogos */}
-          <TabsContent value="proximos">
-            <div className="p-6 text-center text-gray-500">
-              Novos jogos serão adicionados em breve.
+              {/* Tab Próximos Jogos */}
+              <TabsContent value="proximos" className="mt-0">
+                <div className="p-6 text-center text-gray-500">
+                  Novos jogos serão adicionados em breve.
+                </div>
+              </TabsContent>
             </div>
-          </TabsContent>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>

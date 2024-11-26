@@ -149,4 +149,19 @@ contract Bets is Disableable {
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
     }
+
+    /// @notice Inicializa uma partida no sistema de apostas.
+    /// @param matchId O ID da partida.
+    function initializeMatch(bytes32 matchId) public onlyOwner {
+        // Verifica se a partida existe no Oracle
+        require(oracle.matchExists(matchId), "Match does not exist in Oracle");
+
+        // Verifica se a partida já não foi criada no sistema de apostas
+        require(matches[matchId].totalPool == 0, "Match already exists");
+
+        // Inicializa a partida para apostas
+        matches[matchId].teamAVolume = initialVolume;
+        matches[matchId].teamBVolume = initialVolume;
+        matches[matchId].totalPool = initialVolume * 2;
+    }
 }

@@ -97,6 +97,28 @@ export function BettingCard() {
 
   const prices = calculatePrices();
 
+  const calculateProbabilities = () => {
+    if (totalTokens === 0) {
+      return {
+        teamA: 33.33,
+        draw: 33.33,
+        teamB: 33.33
+      };
+    }
+
+    const teamA = (tokenA / totalTokens) * 100;
+    const teamB = (tokenB / totalTokens) * 100;
+    const draw = 100 - (teamA + teamB);
+
+    return {
+      teamA: Number(teamA.toFixed(2)),
+      draw: Number(draw.toFixed(2)),
+      teamB: Number(teamB.toFixed(2))
+    };
+  };
+
+  const probabilities = calculateProbabilities();
+
   const { 
     write: placeBet,
     data: placeBetData,
@@ -255,6 +277,75 @@ export function BettingCard() {
                 </FormItem>
               )}
             />
+
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-semibold mb-3">Probabilidade de Vitória</h3>
+              <div className="space-y-2">
+                <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden flex relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                  
+                  <div 
+                    className="h-full bg-green-500 transition-all duration-700 ease-in-out transform flex items-center justify-center text-xs text-white font-bold relative group"
+                    style={{ 
+                      width: `${probabilities.teamA}%`,
+                      transform: selectedTeam === "BRZ" ? "scale(1.1)" : "scale(1)",
+                    }}
+                  >
+                    {probabilities.teamA > 10 && (
+                      <span className="relative z-10 group-hover:scale-110 transition-transform">
+                        {probabilities.teamA}%
+                      </span>
+                    )}
+                    {selectedTeam === "BRZ" && (
+                      <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
+                    )}
+                  </div>
+                  
+                  <div 
+                    className="h-full bg-yellow-500 transition-all duration-700 ease-in-out flex items-center justify-center text-xs text-white font-bold relative group"
+                    style={{ width: `${probabilities.draw}%` }}
+                  >
+                    {probabilities.draw > 10 && (
+                      <span className="relative z-10 group-hover:scale-110 transition-transform">
+                        {probabilities.draw}%
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div 
+                    className="h-full bg-blue-500 transition-all duration-700 ease-in-out transform flex items-center justify-center text-xs text-white font-bold relative group"
+                    style={{ 
+                      width: `${probabilities.teamB}%`,
+                      transform: selectedTeam === "ARZ" ? "scale(1.1)" : "scale(1)",
+                    }}
+                  >
+                    {probabilities.teamB > 10 && (
+                      <span className="relative z-10 group-hover:scale-110 transition-transform">
+                        {probabilities.teamB}%
+                      </span>
+                    )}
+                    {selectedTeam === "ARZ" && (
+                      <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-between text-sm mt-2">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-gray-600">Brasil</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                    <span className="text-gray-600">Empate</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                    <span className="text-gray-600">Argentina</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {form.watch("amount") && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">

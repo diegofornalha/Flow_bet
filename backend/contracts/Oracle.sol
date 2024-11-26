@@ -85,10 +85,11 @@ abstract contract Oracle {
 contract MyOracle is Oracle {
     struct Match {
         bytes32 id;
-        string name;
-        string participants;
+        string name;            // Nome do campeonato (ex: "Brasileirão Série A")
+        string participants;    // Times (ex: "Fluminense vs Criciúma")
         uint8 participantCount;
-        uint date;
+        uint256 matchDate;     // Data da partida (timestamp)
+        uint256 matchTime;     // Horário em segundos desde meia-noite (0-86400)
         MatchOutcome outcome;
         int8 winner;
     }
@@ -96,6 +97,9 @@ contract MyOracle is Oracle {
     mapping(bytes32 => Match) private matches;
     bytes32[] private matchIds;
 
+    // Offset para Brasília (UTC-3) em segundos
+    int256 constant BRASILIA_OFFSET = -3 * 3600; // -3 horas em segundos
+    
     /// @notice Construtor que inicializa o contrato com dados de teste.
     constructor() {
         addTestData();
@@ -214,16 +218,89 @@ contract MyOracle is Oracle {
 
     /// @notice Adiciona dados de teste ao oráculo.
     function addTestData() public override {
-        bytes32 matchId = keccak256(abi.encodePacked("Match1"));
+        createMatch(
+            "Brasileirão Série A",
+            "São Paulo vs Grêmio",
+            block.timestamp,
+            68400  // 19:00
+        );
+    }
+
+    /// @notice Cria uma nova partida com suporte a caracteres Unicode.
+    /// @param championshipName Nome do campeonato (pode conter acentos).
+    /// @param teams Lista de times (pode conter acentos).
+    /// @param matchDate Timestamp UTC.
+    /// @param matchTime Horário local em segundos.
+    function createMatch(
+        string memory championshipName,
+        string memory teams,
+        uint256 matchDate,
+        uint256 matchTime
+    ) public {
+        require(matchTime < 86400, "Horario invalido");
+        require(bytes(championshipName).length > 0, "Nome do campeonato vazio");
+        require(bytes(teams).length > 0, "Nome dos times vazio");
+        
+        // Ajusta o timestamp para UTC
+        uint256 utcMatchDate = matchDate - uint256(-BRASILIA_OFFSET);
+        
+        // O keccak256 já suporta naturalmente strings UTF-8
+        bytes32 matchId = keccak256(
+            abi.encodePacked(championshipName, teams, utcMatchDate, matchTime)
+        );
+
         matches[matchId] = Match({
             id: matchId,
-            name: "Match 1",
-            participants: "Team A vs Team B",
+            name: championshipName,  // Strings UTF-8 são suportadas nativamente
+            participants: teams,     // Suporta acentos e caracteres especiais
             participantCount: 2,
-            date: block.timestamp,
+            matchDate: utcMatchDate,
+            matchTime: matchTime,
             outcome: MatchOutcome.Pending,
             winner: -1
         });
         matchIds.push(matchId);
+    }
+
+    function updateMatchStatus(
+        bytes32 matchId,
+        MatchOutcome newOutcome
+    ) public onlyOwner {
+        require(matchExists(matchId), "Match not found");
+        matches[matchId].outcome = newOutcome;
+    }
+
+    // Função auxiliar para converter timestamp em data legível
+    function getMatchDateTime(bytes32 matchId) 
+        public 
+        view 
+        returns (
+            uint256 date,    // timestamp da data
+            uint256 time,    // segundos desde meia-noite
+            string memory formattedTime,  // horário formatado (HH:MM)
+            string memory timeZone        // identificador do fuso horário
+        ) 
+    {
+        Match storage matchData = matches[matchId];
+        
+        // Ajusta o timestamp de volta para horário de Brasília
+        date = matchData.matchDate + uint256(-BRASILIA_OFFSET);
+        time = matchData.matchTime;
+        
+        // Calcula horas e minutos
+        uint256 hours = matchData.matchTime / 3600;
+        uint256 minutes = (matchData.matchTime % 3600) / 60;
+        
+        // Formata o horário (HH:MM)
+        formattedTime = string(
+            abi.encodePacked(
+                toString(hours),
+                ":",
+                minutes < 10 ? "0" : "",
+                toString(minutes)
+            )
+        );
+
+        timeZone = "BRT"; // Brasilia Time
     }
 }
