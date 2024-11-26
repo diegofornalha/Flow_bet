@@ -63,36 +63,38 @@ contract Bets is Disableable {
         require(matchDetails.totalPool > 0, "Match not found");
 
         if (team) {
-            uint256 currentPrice = matchDetails.teamAVolume /
+            uint256 currentPrice = (matchDetails.teamAVolume * 1e18) /
                 matchDetails.totalPool;
+            uint256 shares = (uint256(amount) * 1e18) / currentPrice;
+
             matchDetails.teamAVolume += amount;
-            uint shares = amount / currentPrice;
+            matchDetails.totalPool += amount;
             userSharesA[matchId][msg.sender] += shares;
         } else {
-            uint256 currentPrice = matchDetails.teamBVolume /
+            uint256 currentPrice = (matchDetails.teamBVolume * 1e18) /
                 matchDetails.totalPool;
+            uint256 shares = (uint256(amount) * 1e18) / currentPrice;
+
             matchDetails.teamBVolume += amount;
-            uint shares = amount / currentPrice;
+            matchDetails.totalPool += amount;
             userSharesB[matchId][msg.sender] += shares;
         }
-
-        matchDetails.totalPool += amount;
     }
 
     /// @notice Retorna o preço atual das ações para o Time A.
     /// @param matchId O ID da partida.
     /// @return O preço das ações para o Time A.
-    function getTeamAPrice(bytes32 matchId) public view returns (uint) {
+    function getTeamAPrice(bytes32 matchId) public view returns (uint256) {
         Match storage matchDetails = matches[matchId];
-        return matchDetails.teamAVolume / matchDetails.totalPool;
+        return (matchDetails.teamAVolume * 1e18) / matchDetails.totalPool;
     }
 
     /// @notice Retorna o preço atual das ações para o Time B.
     /// @param matchId O ID da partida.
     /// @return O preço das ações para o Time B.
-    function getTeamBPrice(bytes32 matchId) public view returns (uint) {
+    function getTeamBPrice(bytes32 matchId) public view returns (uint256) {
         Match storage matchDetails = matches[matchId];
-        return matchDetails.teamBVolume / matchDetails.totalPool;
+        return (matchDetails.teamBVolume * 1e18) / matchDetails.totalPool;
     }
 
     /// @notice Retorna a porcentagem do volume total para o Time A.
