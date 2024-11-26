@@ -4,3 +4,5 @@ node_modules
 /backend/out
 /backend/cache
 /backend/lib
+/out
+/cache
