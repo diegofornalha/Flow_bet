@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -42,13 +42,18 @@ export function TokenTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  const { writeContract } = useWriteContract();
-
   // Lê o token atual
-  const { data: currentToken } = useReadContract({
+  const { data: currentToken } = useContractRead({
     address: CONTRACTS.DISABLEABLE,
     abi: tokenAbi,
     functionName: "getPaymentToken",
+  });
+
+  // Hook de escrita
+  const { write: setPaymentToken } = useContractWrite({
+    address: CONTRACTS.DISABLEABLE,
+    abi: tokenAbi,
+    functionName: "setPaymentToken",
   });
 
   const form = useForm<z.infer<typeof tokenSchema>>({
@@ -62,10 +67,7 @@ export function TokenTab() {
   const handleChangeToken = async (values: z.infer<typeof tokenSchema>) => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.DISABLEABLE,
-        abi: tokenAbi,
-        functionName: "setPaymentToken",
+      await setPaymentToken({
         args: [values.tokenAddress as `0x${string}`],
       });
       setStatus("Token de pagamento alterado com sucesso!");

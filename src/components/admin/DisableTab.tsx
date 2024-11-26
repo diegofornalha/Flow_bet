@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -62,13 +62,30 @@ export function DisableTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  const { writeContract } = useWriteContract();
-
   // Lê o status de disabled
-  const { data: isDisabled } = useReadContract({
+  const { data: isDisabled } = useContractRead({
     address: CONTRACTS.DISABLEABLE,
     abi: disableAbi,
     functionName: "isDisabled",
+  });
+
+  // Hooks de escrita
+  const { write: toggleSystem } = useContractWrite({
+    address: CONTRACTS.DISABLEABLE,
+    abi: disableAbi,
+    functionName: isDisabled ? "enable" : "disable",
+  });
+
+  const { write: transferOwnership } = useContractWrite({
+    address: CONTRACTS.DISABLEABLE,
+    abi: disableAbi,
+    functionName: "transferOwnership",
+  });
+
+  const { write: renounceOwnership } = useContractWrite({
+    address: CONTRACTS.DISABLEABLE,
+    abi: disableAbi,
+    functionName: "renounceOwnership",
   });
 
   const form = useForm<z.infer<typeof ownershipSchema>>({
@@ -82,11 +99,7 @@ export function DisableTab() {
   const handleToggleSystem = async () => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.DISABLEABLE,
-        abi: disableAbi,
-        functionName: isDisabled ? "enable" : "disable",
-      });
+      await toggleSystem();
       setStatus(`Sistema ${isDisabled ? "habilitado" : "desabilitado"} com sucesso!`);
     } catch (error) {
       console.error("Erro ao alterar status do sistema:", error);
@@ -100,10 +113,7 @@ export function DisableTab() {
   const handleTransferOwnership = async (values: z.infer<typeof ownershipSchema>) => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.DISABLEABLE,
-        abi: disableAbi,
-        functionName: "transferOwnership",
+      await transferOwnership({
         args: [values.newOwner as `0x${string}`],
       });
       setStatus("Propriedade transferida com sucesso!");
@@ -120,11 +130,7 @@ export function DisableTab() {
   const handleRenounceOwnership = async () => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.DISABLEABLE,
-        abi: disableAbi,
-        functionName: "renounceOwnership",
-      });
+      await renounceOwnership();
       setStatus("Propriedade renunciada com sucesso!");
     } catch (error) {
       console.error("Erro ao renunciar propriedade:", error);

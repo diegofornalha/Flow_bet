@@ -1,10 +1,10 @@
-import { useReadContract } from "wagmi";
+import { useContractRead } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { betPatAbi } from "@/src/config/abis";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 export function BetPatTab() {
-  const { data: volumeData } = useReadContract({
+  const { data: volumeData } = useContractRead({
     address: CONTRACTS.BETPAT,
     abi: betPatAbi,
     functionName: "viewVolume",

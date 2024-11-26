@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { oracleAbi } from "@/src/config/abis";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -8,22 +8,28 @@ import { useState } from "react";
 export function OracleTab() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data: isActive } = useReadContract({
+  const { data: isActive } = useContractRead({
     address: CONTRACTS.ORACLE,
     abi: oracleAbi,
     functionName: "isActive",
   });
 
-  const { writeContract } = useWriteContract();
+  const { write: activateOracle } = useContractWrite({
+    address: CONTRACTS.ORACLE,
+    abi: oracleAbi,
+    functionName: "activate",
+  });
+
+  const { write: deactivateOracle } = useContractWrite({
+    address: CONTRACTS.ORACLE,
+    abi: oracleAbi,
+    functionName: "deactivate",
+  });
 
   const handleActivate = async () => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.ORACLE,
-        abi: oracleAbi,
-        functionName: "activate",
-      });
+      await activateOracle();
     } catch (error) {
       console.error("Erro:", error);
     } finally {
@@ -34,11 +40,7 @@ export function OracleTab() {
   const handleDeactivate = async () => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.ORACLE,
-        abi: oracleAbi,
-        functionName: "deactivate",
-      });
+      await deactivateOracle();
     } catch (error) {
       console.error("Erro:", error);
     } finally {

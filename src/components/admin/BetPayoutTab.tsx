@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -66,7 +66,12 @@ export function BetPayoutTab() {
   const [status, setStatus] = useState<string | null>(null);
   const [pendingAmount, setPendingAmount] = useState<string | null>(null);
 
-  const { writeContract } = useWriteContract();
+  // Hooks de escrita
+  const { write: payoutWrite } = useContractWrite({
+    address: CONTRACTS.BETPAYOUT,
+    abi: betPayoutAbi,
+    functionName: "payOutWinnings",
+  });
 
   // Form para pagamento
   const payoutForm = useForm<z.infer<typeof payoutSchema>>({
@@ -89,10 +94,7 @@ export function BetPayoutTab() {
   const handlePayout = async (values: z.infer<typeof payoutSchema>) => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.BETPAYOUT,
-        abi: betPayoutAbi,
-        functionName: "payOutWinnings",
+      await payoutWrite({
         args: [values.userAddress as `0x${string}`, BigInt(values.amount)],
       });
       setStatus("Pagamento realizado com sucesso!");
@@ -108,7 +110,7 @@ export function BetPayoutTab() {
   // Verificar pagamentos pendentes
   const handleCheckPending = async (values: z.infer<typeof checkPayoutSchema>) => {
     try {
-      const { data } = await useReadContract({
+      const { data } = await useContractRead({
         address: CONTRACTS.BETPAYOUT,
         abi: betPayoutAbi,
         functionName: "pendingPayouts",
