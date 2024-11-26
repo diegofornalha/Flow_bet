@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 /// @title Base Contract para Oráculo.
 abstract contract Oracle {
     /// @notice Enumeração dos possíveis resultados de uma partida.
@@ -80,18 +82,46 @@ abstract contract Oracle {
 
     /// @notice Adiciona dados de teste ao oráculo.
     function addTestData() public virtual;
+
+    /// @notice Retorna data e hora formatados de uma partida
+    /// @param matchId O ID da partida
+    /// @return date Data em timestamp
+    /// @return time Horário em segundos desde meia-noite
+    /// @return formattedTime Horário formatado (HH:MM)
+    /// @return timeZone Fuso horário
+    function getMatchDateTime(
+        bytes32 matchId
+    )
+        public
+        view
+        virtual
+        returns (
+            uint256 date,
+            uint256 time,
+            string memory formattedTime,
+            string memory timeZone
+        );
 }
 
-contract MyOracle is Oracle {
+contract MyOracle is Oracle, Ownable {
+    event MatchCreated(
+        bytes32 indexed matchId,
+        string championshipName,
+        string teams,
+        uint256 matchDate,
+        uint256 matchTime
+    );
+
     struct Match {
         bytes32 id;
-        string name;            // Nome do campeonato (ex: "Brasileirão Série A")
-        string participants;    // Times (ex: "Fluminense vs Criciúma")
+        string championshipName; // Nome do campeonato
+        string teamA; // Nome do Time A
+        string teamB; // Nome do Time B
         uint8 participantCount;
-        uint256 matchDate;     // Data da partida (timestamp)
-        uint256 matchTime;     // Horário em segundos desde meia-noite (0-86400)
+        uint256 matchDate;
+        uint256 matchTime;
         MatchOutcome outcome;
-        int8 winner;
+        int8 winner; // 0 para Time A, 1 para Time B, -1 para indefinido
     }
 
     mapping(bytes32 => Match) private matches;
@@ -99,11 +129,12 @@ contract MyOracle is Oracle {
 
     // Offset para Brasília (UTC-3) em segundos
     int256 constant BRASILIA_OFFSET = -3 * 3600; // -3 horas em segundos
-    
+
+    // Adicionar constante para data limite
+    uint256 public constant SEASON_DEADLINE = 1735603200; // 31 de dezembro de 2024 00:00 UTC
+
     /// @notice Construtor que inicializa o contrato com dados de teste.
-    constructor() {
-        addTestData();
-    }
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Retorna as partidas pendentes.
     /// @return Uma lista de IDs de partidas pendentes.
@@ -165,10 +196,10 @@ contract MyOracle is Oracle {
         Match storage matchData = matches[_matchId];
         return (
             matchData.id,
-            matchData.name,
-            matchData.participants,
+            matchData.championshipName,
+            string(abi.encodePacked(matchData.teamA, " vs ", matchData.teamB)),
             matchData.participantCount,
-            matchData.date,
+            matchData.matchDate,
             matchData.outcome,
             matchData.winner
         );
@@ -218,48 +249,73 @@ contract MyOracle is Oracle {
 
     /// @notice Adiciona dados de teste ao oráculo.
     function addTestData() public override {
-        createMatch(
-            "Brasileirão Série A",
-            "São Paulo vs Grêmio",
-            block.timestamp,
-            68400  // 19:00
-        );
+        // Função vazia para satisfazer o contrato base
     }
 
-    /// @notice Cria uma nova partida com suporte a caracteres Unicode.
-    /// @param championshipName Nome do campeonato (pode conter acentos).
-    /// @param teams Lista de times (pode conter acentos).
-    /// @param matchDate Timestamp UTC.
-    /// @param matchTime Horário local em segundos.
+    /// @notice Cria uma nova partida real
+    /// @param championshipName Nome do campeonato (ex: "Brasileirão Série A")
+    /// @param teamA Time A (ex: "Fluminense")
+    /// @param teamB Time B (ex: "Criciúma")
+    /// @param matchDate Data da partida (timestamp)
+    /// @param matchTime Horário em segundos (0-86400)
     function createMatch(
         string memory championshipName,
-        string memory teams,
+        string memory teamA, // Time A separado
+        string memory teamB, // Time B separado
         uint256 matchDate,
         uint256 matchTime
-    ) public {
+    ) public onlyOwner {
+        // Adiciona onlyOwner para segurança
+        // Validações
         require(matchTime < 86400, "Horario invalido");
         require(bytes(championshipName).length > 0, "Nome do campeonato vazio");
-        require(bytes(teams).length > 0, "Nome dos times vazio");
-        
-        // Ajusta o timestamp para UTC
-        uint256 utcMatchDate = matchDate - uint256(-BRASILIA_OFFSET);
-        
-        // O keccak256 já suporta naturalmente strings UTF-8
-        bytes32 matchId = keccak256(
-            abi.encodePacked(championshipName, teams, utcMatchDate, matchTime)
+        require(bytes(teamA).length > 0, "Nome do time A vazio");
+        require(bytes(teamB).length > 0, "Nome do time B vazio");
+        require(matchDate > block.timestamp, "Data deve ser futura");
+
+        // Nova validação para data limite
+        require(
+            matchDate <= SEASON_DEADLINE,
+            "Data alem do limite da temporada"
         );
 
+        // Ajusta o timestamp para UTC
+        uint256 utcMatchDate = matchDate - uint256(-BRASILIA_OFFSET);
+
+        bytes32 matchId = keccak256(
+            abi.encodePacked(
+                championshipName,
+                teamA,
+                teamB,
+                utcMatchDate,
+                matchTime
+            )
+        );
+
+        require(!matchExists(matchId), "Partida ja existe");
+
+        // Cria a partida com times separados
         matches[matchId] = Match({
             id: matchId,
-            name: championshipName,  // Strings UTF-8 são suportadas nativamente
-            participants: teams,     // Suporta acentos e caracteres especiais
+            championshipName: championshipName,
+            teamA: teamA,
+            teamB: teamB,
             participantCount: 2,
             matchDate: utcMatchDate,
             matchTime: matchTime,
             outcome: MatchOutcome.Pending,
             winner: -1
         });
+
         matchIds.push(matchId);
+
+        emit MatchCreated(
+            matchId,
+            championshipName,
+            string(abi.encodePacked(teamA, " vs ", teamB)),
+            matchDate,
+            matchTime
+        );
     }
 
     function updateMatchStatus(
@@ -270,37 +326,66 @@ contract MyOracle is Oracle {
         matches[matchId].outcome = newOutcome;
     }
 
+    // Função auxiliar para converter uint para string
+    function toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+
     // Função auxiliar para converter timestamp em data legível
-    function getMatchDateTime(bytes32 matchId) 
-        public 
-        view 
+    function getMatchDateTime(
+        bytes32 matchId
+    )
+        public
+        view
+        override
         returns (
-            uint256 date,    // timestamp da data
-            uint256 time,    // segundos desde meia-noite
-            string memory formattedTime,  // horário formatado (HH:MM)
-            string memory timeZone        // identificador do fuso horário
-        ) 
+            uint256 date,
+            uint256 time,
+            string memory formattedTime,
+            string memory timeZone
+        )
     {
         Match storage matchData = matches[matchId];
-        
-        // Ajusta o timestamp de volta para horário de Brasília
+
         date = matchData.matchDate + uint256(-BRASILIA_OFFSET);
         time = matchData.matchTime;
-        
-        // Calcula horas e minutos
-        uint256 hours = matchData.matchTime / 3600;
-        uint256 minutes = (matchData.matchTime % 3600) / 60;
-        
-        // Formata o horário (HH:MM)
+
+        uint256 hourValue = matchData.matchTime / 3600;
+        uint256 minuteValue = (matchData.matchTime % 3600) / 60;
+
         formattedTime = string(
             abi.encodePacked(
-                toString(hours),
+                toString(hourValue),
                 ":",
-                minutes < 10 ? "0" : "",
-                toString(minutes)
+                minuteValue < 10 ? "0" : "",
+                toString(minuteValue)
             )
         );
 
-        timeZone = "BRT"; // Brasilia Time
+        timeZone = "BRT";
+    }
+
+    // Função auxiliar para obter os times separadamente
+    function getTeams(
+        bytes32 matchId
+    ) public view returns (string memory teamA, string memory teamB) {
+        require(matchExists(matchId), "Partida nao encontrada");
+        Match storage matchData = matches[matchId];
+        return (matchData.teamA, matchData.teamB);
     }
 }

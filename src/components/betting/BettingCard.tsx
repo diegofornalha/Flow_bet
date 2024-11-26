@@ -19,6 +19,8 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import Image from "next/image";
+import { useMatch } from '@/src/hooks/useMatch';
+import { Uint256Input } from "../ui/uint256-input";
 
 const abi = [
   {
@@ -48,11 +50,18 @@ const abi = [
 ] as const;
 
 const formSchema = z.object({
-  amount: z
-    .string()
-    .min(1, { message: "A string deve conter pelo menos 1 caractere." })
-    .max(200)
-    .refine((value) => !isNaN(Number(value))),
+  amount: z.string()
+    .min(1, "Valor é obrigatório")
+    .transform((val) => {
+      try {
+        return BigInt(val);
+      } catch {
+        return null;
+      }
+    })
+    .refine((val) => val !== null && val > 0n, {
+      message: "Valor deve ser maior que zero",
+    }),
 });
 
 export function BettingCard() {
@@ -209,9 +218,29 @@ export function BettingCard() {
     return null;
   };
 
+  const matchId = "0xc1bfcab9873c24b7adb4047d80994d931c294f6c9daae37f2bb400c03c4aa8ec";
+  const match = useMatch(matchId);
+
   return (
     <Card className="w-full bg-white text-black shadow-lg">
       <CardHeader>
+        {match && !match.isLoading && (
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold">{match.name}</h2>
+            <p className="text-sm text-gray-600">{match.participants}</p>
+            <p className="text-sm text-gray-500">
+              {match.date.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'America/Sao_Paulo'
+              })}
+            </p>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex justify-between items-center">
@@ -260,19 +289,18 @@ export function BettingCard() {
                 <FormItem>
                   <FormLabel>Quantia em Flow</FormLabel>
                   <FormControl>
-                    <Input
+                    <Uint256Input
                       placeholder="Digite a quantia"
-                      {...field}
-                      className={`bg-gray-100 border-gray-300 text-black ${
-                        fieldState.error ? "border-red-500" : ""
-                      }`}
+                      value={field.value ? BigInt(field.value) : null}
+                      onChange={(value) => field.onChange(value?.toString() || '')}
+                      className={fieldState.error ? "border-red-500" : ""}
                     />
                   </FormControl>
                   <FormDescription>
                     Insira a quantia que deseja apostar em tokens Flow.
                   </FormDescription>
                   <FormMessage>
-                    {fieldState.error ? "Por favor, insira um número válido." : null}
+                    {fieldState.error ? fieldState.error.message : null}
                   </FormMessage>
                 </FormItem>
               )}

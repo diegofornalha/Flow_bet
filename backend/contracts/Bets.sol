@@ -9,7 +9,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Bets Contract
 /// @notice Este contrato permite criar partidas e apostar em times.
-/// @dev Todas as funções críticas são protegidas por um modificador onlyOwner.
 contract Bets is Disableable {
     using Math for uint256;
     Oracle private oracle;
@@ -29,7 +28,23 @@ contract Bets is Disableable {
 
     uint public constant initialVolume = 100 wei;
 
-    /// @notice Construtor que define o dono do contrato.
+    // Eventos
+    event MatchInitialized(
+        bytes32 indexed matchId,
+        uint initialVolume,
+        string championshipName,
+        string teams
+    );
+
+    event BetPlaced(
+        bytes32 indexed matchId,
+        address indexed bettor,
+        bool teamA,
+        uint amount,
+        uint shares,
+        string teams
+    );
+
     constructor(
         address _oracle,
         address _betPayout,
@@ -39,15 +54,38 @@ contract Bets is Disableable {
         betPayout = BetPayout(_betPayout);
     }
 
-    /// @notice Cria uma nova partida com volumes iniciais para ambos os times.
-    /// @param matchId O ID único da partida.
-    function createMatch(bytes32 matchId) public onlyOwner {
-        require(matches[matchId].totalPool == 0, "Match already exists");
+    /// @notice Inicializa uma partida no sistema de apostas.
+    /// @param matchId O ID da partida.
+    function initializeMatch(bytes32 matchId) public onlyOwner {
         require(oracle.matchExists(matchId), "Match does not exist in Oracle");
+        require(matches[matchId].totalPool == 0, "Match already exists");
 
+        // Obtém informações da partida do Oracle
+        (
+            ,
+            // bytes32 id
+            string memory championshipName,
+            string memory teams, // uint8 participantCount
+            // uint date
+            ,
+            ,
+            Oracle.MatchOutcome outcome,
+
+        ) = // int8 winner
+            oracle.getMatch(matchId);
+
+        require(
+            outcome == Oracle.MatchOutcome.Pending,
+            "Match must be in Pending state"
+        );
+
+        // Inicializa volumes
         matches[matchId].teamAVolume = initialVolume;
         matches[matchId].teamBVolume = initialVolume;
         matches[matchId].totalPool = initialVolume * 2;
+
+        // Emite evento com informações detalhadas
+        emit MatchInitialized(matchId, initialVolume, championshipName, teams);
     }
 
     /// @notice Coloca uma aposta em um time específico.
@@ -61,13 +99,39 @@ contract Bets is Disableable {
     ) public payable {
         require(msg.value >= MINIMUM_BET, "Valor menor que o minimo permitido");
         require(amount > 0, "Quantidade deve ser maior que zero");
+
         Match storage matchDetails = matches[matchId];
         require(matchDetails.totalPool > 0, "Match not found");
 
+        // Verifica status da partida no Oracle
+        (
+            ,
+            ,
+            // bytes32 id
+            // string memory name
+            string memory teams, // uint8 participantCount
+            // uint date
+            ,
+            ,
+            Oracle.MatchOutcome outcome,
+
+        ) = // int8 winner
+            oracle.getMatch(matchId);
+
+        require(
+            outcome == Oracle.MatchOutcome.Pending,
+            "Match not available for betting"
+        );
+
+        // Verifica se a partida já começou
+        (uint256 matchDate, , , ) = oracle.getMatchDateTime(matchId);
+        require(block.timestamp < matchDate, "Match already started");
+
+        uint256 shares;
         if (team) {
             uint256 currentPrice = (matchDetails.teamAVolume * 1e18) /
                 matchDetails.totalPool;
-            uint256 shares = (uint256(amount) * 1e18) / currentPrice;
+            shares = (uint256(amount) * 1e18) / currentPrice;
 
             matchDetails.teamAVolume += amount;
             matchDetails.totalPool += amount;
@@ -75,12 +139,15 @@ contract Bets is Disableable {
         } else {
             uint256 currentPrice = (matchDetails.teamBVolume * 1e18) /
                 matchDetails.totalPool;
-            uint256 shares = (uint256(amount) * 1e18) / currentPrice;
+            shares = (uint256(amount) * 1e18) / currentPrice;
 
             matchDetails.teamBVolume += amount;
             matchDetails.totalPool += amount;
             userSharesB[matchId][msg.sender] += shares;
         }
+
+        // Emite evento com informações detalhadas
+        emit BetPlaced(matchId, msg.sender, team, amount, shares, teams);
     }
 
     /// @notice Retorna o preço atual das ações para o Time A.
@@ -148,20 +215,5 @@ contract Bets is Disableable {
     /// @return O saldo do contrato.
     function getContractBalance() external view returns (uint256) {
         return address(this).balance;
-    }
-
-    /// @notice Inicializa uma partida no sistema de apostas.
-    /// @param matchId O ID da partida.
-    function initializeMatch(bytes32 matchId) public onlyOwner {
-        // Verifica se a partida existe no Oracle
-        require(oracle.matchExists(matchId), "Match does not exist in Oracle");
-
-        // Verifica se a partida já não foi criada no sistema de apostas
-        require(matches[matchId].totalPool == 0, "Match already exists");
-
-        // Inicializa a partida para apostas
-        matches[matchId].teamAVolume = initialVolume;
-        matches[matchId].teamBVolume = initialVolume;
-        matches[matchId].totalPool = initialVolume * 2;
     }
 }

@@ -16,7 +16,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "../ui/form";
+import { Uint256Input } from "../ui/uint256-input";
 
 // Enum para mapear os status das partidas
 enum MatchOutcome {
@@ -77,16 +79,42 @@ const betsAbi = [
 ] as const;
 
 const matchSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  description: z.string().min(1, "Descrição é obrigatória"),
-  matchDate: z.string().min(1, "Data é obrigatória"),
-  matchTime: z.string().min(1, "Horário é obrigatório"),
+  championshipName: z.string().min(1, "Nome do campeonato é obrigatório"),
+  teamA: z.string().min(1, "Nome do Time A é obrigatório"),
+  teamB: z.string().min(1, "Nome do Time B é obrigatório"),
+  matchDate: z.string()
+    .min(1, "Data é obrigatória")
+    .transform((val) => {
+      try {
+        return BigInt(val);
+      } catch {
+        return null;
+      }
+    })
+    .refine((val) => val !== null && val > 0n, {
+      message: "Data deve ser maior que zero",
+    }),
+  matchTime: z.string()
+    .min(1, "Horário é obrigatório")
+    .transform((val) => {
+      try {
+        return BigInt(val);
+      } catch {
+        return null;
+      }
+    })
+    .refine((val) => val !== null && val >= 0n && val < 86400n, {
+      message: "Horário deve estar entre 0 e 86399 (segundos em um dia)",
+    }),
 });
 
-// Função para converter data/hora local para UTC
-function localToUTC(date: string, time: string): number {
-  const localDateTime = new Date(`${date}T${time}`);
-  return Math.floor(localDateTime.getTime() / 1000); // Converte para timestamp UTC em segundos
+// Função para converter data e hora para timestamp e segundos desde meia-noite
+function convertToMatchTime(date: string, time: string): { matchDate: number, matchTime: number } {
+  const [hours, minutes] = time.split(':').map(Number);
+  const matchTime = hours * 3600 + minutes * 60; // Converte para segundos desde meia-noite
+  const matchDate = Math.floor(new Date(date).getTime() / 1000); // Timestamp em segundos
+
+  return { matchDate, matchTime };
 }
 
 // Função para formatar data e hora no fuso de Brasília
@@ -129,9 +157,29 @@ export function OracleTab() {
   // Hook para criar partida no Oracle
   const { write: createMatch } = useContractWrite({
     address: CONTRACTS.ORACLE,
-    abi: oracleAbi,
+    abi: [
+      {
+        inputs: [
+          { internalType: "string", name: "championshipName", type: "string" },
+          { internalType: "string", name: "teamA", type: "string" },
+          { internalType: "string", name: "teamB", type: "string" },
+          { internalType: "uint256", name: "matchDate", type: "uint256" },
+          { internalType: "uint256", name: "matchTime", type: "uint256" }
+        ],
+        name: "createMatch",
+        outputs: [],
+        stateMutability: "nonpayable",
+        type: "function"
+      }
+    ],
     functionName: "createMatch",
     mode: 'prepared',
+    onSuccess(data) {
+      console.log('Transação enviada:', data.hash);
+    },
+    onError(error) {
+      console.error('Erro na transação:', error);
+    }
   });
 
   // Hook para inicializar partida no sistema de apostas
@@ -163,36 +211,21 @@ export function OracleTab() {
     try {
       setIsLoading(true);
       
-      // Converte data e hora local para timestamp UTC
-      const matchTimestamp = localToUTC(values.matchDate, values.matchTime);
-      
-      // 1. Criar partida no Oracle com timestamp
-      await createMatch?.({
+      // Chama o contrato
+      const tx = await createMatch?.({
         args: [
-          values.name, 
-          values.description,
-          BigInt(matchTimestamp) // Envia o timestamp UTC para a blockchain
+          values.championshipName,
+          values.teamA,
+          values.teamB,
+          values.matchDate,
+          values.matchTime
         ],
       });
 
-      // 2. Esperar um pouco para a transação ser minerada
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // 3. Obter ID da partida mais recente
-      const { data: matchId } = await useContractRead({
-        address: CONTRACTS.ORACLE,
-        abi: oracleAbi,
-        functionName: "getMostRecentMatch",
-        args: [true],
-      });
-
-      if (matchId) {
-        // 4. Inicializar partida no sistema de apostas
-        await initializeMatch?.({
-          args: [matchId],
-        });
-
-        setStatus("Partida criada e inicializada com sucesso!");
+      if (tx) {
+        setStatus(`Transação enviada! Hash: ${tx.hash}`);
+        await tx.wait();
+        setStatus("Partida criada com sucesso!");
         form.reset();
         refetchMatches();
       }
@@ -217,26 +250,12 @@ export function OracleTab() {
             <form onSubmit={form.handleSubmit(handleCreateMatch)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="championshipName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome da Partida</FormLabel>
+                    <FormLabel>Nome do Campeonato</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Brasil vs Argentina" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Final da Copa América 2024" {...field} />
+                      <Input placeholder="Ex: Brasileirão Série A" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -246,17 +265,59 @@ export function OracleTab() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
+                  name="teamA"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time A</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Fluminense" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="teamB"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time B</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Criciúma" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="matchDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data da Partida</FormLabel>
+                      <FormLabel>Data (Unix Timestamp)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
-                          {...field}
-                          min={new Date().toISOString().split('T')[0]} // Data mínima é hoje
+                        <Uint256Input
+                          placeholder="Ex: 1703721600"
+                          value={field.value ? BigInt(field.value) : null}
+                          onChange={(value) => field.onChange(value?.toString() || '')}
+                          className="font-mono"
                         />
                       </FormControl>
+                      <FormDescription>
+                        Timestamp em segundos desde 01/01/1970
+                        <a 
+                          href="https://www.unixtimestamp.com/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline ml-2"
+                        >
+                          Conversor
+                        </a>
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -267,13 +328,27 @@ export function OracleTab() {
                   name="matchTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Horário</FormLabel>
+                      <FormLabel>Horário (Segundos)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="time" 
-                          {...field}
+                        <Uint256Input
+                          placeholder="Ex: 43200 (12:00)"
+                          value={field.value ? BigInt(field.value) : null}
+                          onChange={(value) => field.onChange(value?.toString() || '')}
+                          className="font-mono"
+                          max={86399n} // 23:59:59 em segundos
                         />
                       </FormControl>
+                      <FormDescription>
+                        Segundos desde meia-noite (0-86399)
+                        <a 
+                          href="https://www.timeanddate.com/time/time-converter-calculator.html"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline ml-2"
+                        >
+                          Conversor
+                        </a>
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

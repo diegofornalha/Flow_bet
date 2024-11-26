@@ -57,6 +57,21 @@ export const oracleAbi = [
     outputs: [{ internalType: "bool", name: "", type: "bool" }],
     stateMutability: "view",
     type: "function"
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "_matchId", type: "bytes32" }],
+    name: "getMatch",
+    outputs: [
+      { internalType: "bytes32", name: "id", type: "bytes32" },
+      { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "participants", type: "string" },
+      { internalType: "uint8", name: "participantCount", type: "uint8" },
+      { internalType: "uint256", name: "date", type: "uint256" },
+      { internalType: "uint8", name: "outcome", type: "uint8" },
+      { internalType: "int8", name: "winner", type: "int8" }
+    ],
+    stateMutability: "view",
+    type: "function"
   }
 ] as const;
 
