@@ -31,17 +31,31 @@ export const betPayoutAbi = [
 
 export const oracleAbi = [
   {
+    inputs: [
+      { internalType: "string", name: "championshipName", type: "string" },
+      { internalType: "string", name: "teamA", type: "string" },
+      { internalType: "string", name: "teamB", type: "string" },
+      { internalType: "uint256", name: "matchDate", type: "uint256" },
+      { internalType: "uint256", name: "matchTime", type: "uint256" }
+    ],
+    name: "createMatch",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
     inputs: [],
     name: "getAllMatches",
     outputs: [
       {
         components: [
           { internalType: "bytes32", name: "id", type: "bytes32" },
+          { internalType: "string", name: "championshipName", type: "string" },
           { internalType: "string", name: "teamA", type: "string" },
           { internalType: "string", name: "teamB", type: "string" },
-          { internalType: "bool", name: "exists", type: "bool" },
-          { internalType: "bool", name: "finished", type: "bool" },
-          { internalType: "bool", name: "teamAWon", type: "bool" }
+          { internalType: "uint256", name: "matchDate", type: "uint256" },
+          { internalType: "uint256", name: "matchTime", type: "uint256" },
+          { internalType: "enum Oracle.MatchOutcome", name: "outcome", type: "uint8" }
         ],
         internalType: "struct Oracle.Match[]",
         name: "",

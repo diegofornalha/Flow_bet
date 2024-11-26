@@ -129,7 +129,7 @@ export function BettingCard() {
   const probabilities = calculateProbabilities();
 
   const { 
-    write: placeBet,
+    writeAsync: placeBet,
     data: placeBetData,
     isLoading: isPlacingBet,
     isSuccess: placeBetSuccess,
@@ -158,11 +158,25 @@ export function BettingCard() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      placeBet?.({
+      if (!placeBet) {
+        throw new Error("Contrato não está pronto");
+      }
+
+      const tx = await placeBet({
         args: [BigInt(values.amount)],
+        overrides: {
+          gasLimit: BigInt(500000),
+        }
       });
+
+      setTransactionStatus("Transação enviada! Aguardando confirmação...");
+      await tx.wait();
+      setTransactionStatus("Aposta realizada com sucesso!");
+      form.reset();
+
     } catch (error) {
       console.error("Erro ao enviar transação:", error);
+      setTransactionStatus(`Erro ao fazer aposta: ${(error as Error).message}`);
     }
   }
 
@@ -393,7 +407,12 @@ export function BettingCard() {
               }`}
               disabled={isPlacingBet || isWaitingTransaction}
             >
-              {isPlacingBet || isWaitingTransaction ? "Processando..." : "Fazer Aposta"}
+              {isPlacingBet 
+                ? "Confirmando aposta..." 
+                : isWaitingTransaction 
+                  ? "Processando transação..." 
+                  : "Fazer Aposta"
+              }
             </Button>
           </form>
         </Form>

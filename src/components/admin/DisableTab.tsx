@@ -74,6 +74,7 @@ export function DisableTab() {
     address: CONTRACTS.DISABLEABLE,
     abi: disableAbi,
     functionName: isDisabled ? "enable" : "disable",
+    mode: 'prepared',
   });
 
   const { write: transferOwnership } = useContractWrite({
@@ -99,7 +100,17 @@ export function DisableTab() {
   const handleToggleSystem = async () => {
     try {
       setIsLoading(true);
-      await toggleSystem();
+      
+      if (!toggleSystem) {
+        throw new Error("Contrato não está pronto");
+      }
+
+      await toggleSystem({
+        overrides: {
+          gasLimit: BigInt(500000),
+        }
+      });
+
       setStatus(`Sistema ${isDisabled ? "habilitado" : "desabilitado"} com sucesso!`);
     } catch (error) {
       console.error("Erro ao alterar status do sistema:", error);

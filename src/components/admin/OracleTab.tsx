@@ -1,6 +1,6 @@
 "use client";
 
-import { useContractRead, useContractWrite } from "wagmi";
+import { useContractRead, useContractWrite, useWaitForTransaction } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -31,20 +31,16 @@ enum MatchOutcome {
 const oracleAbi = [
   {
     inputs: [
-      { internalType: "string", name: "name", type: "string" },
-      { internalType: "string", name: "description", type: "string" }
+      { internalType: "string", name: "championshipName", type: "string" },
+      { internalType: "string", name: "teamA", type: "string" },
+      { internalType: "string", name: "teamB", type: "string" },
+      { internalType: "uint256", name: "matchDate", type: "uint256" },
+      { internalType: "uint256", name: "matchTime", type: "uint256" }
     ],
     name: "createMatch",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
+    outputs: [],
     stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "bool", name: "active", type: "bool" }],
-    name: "getMostRecentMatch",
-    outputs: [{ internalType: "bytes32", name: "", type: "bytes32" }],
-    stateMutability: "view",
-    type: "function",
+    type: "function"
   },
   {
     inputs: [],
@@ -53,10 +49,12 @@ const oracleAbi = [
       {
         components: [
           { internalType: "bytes32", name: "id", type: "bytes32" },
-          { internalType: "string", name: "name", type: "string" },
-          { internalType: "string", name: "description", type: "string" },
-          { internalType: "enum Oracle.MatchOutcome", name: "outcome", type: "uint8" },
-          { internalType: "bool", name: "active", type: "bool" }
+          { internalType: "string", name: "championshipName", type: "string" },
+          { internalType: "string", name: "teamA", type: "string" },
+          { internalType: "string", name: "teamB", type: "string" },
+          { internalType: "uint256", name: "matchDate", type: "uint256" },
+          { internalType: "uint256", name: "matchTime", type: "uint256" },
+          { internalType: "enum Oracle.MatchOutcome", name: "outcome", type: "uint8" }
         ],
         internalType: "struct Oracle.Match[]",
         name: "",
@@ -147,72 +145,51 @@ export function OracleTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // Inicialização do formulário
+  const form = useForm<z.infer<typeof matchSchema>>({
+    resolver: zodResolver(matchSchema),
+    defaultValues: {
+      championshipName: "",
+      teamA: "",
+      teamB: "",
+      matchDate: "",
+      matchTime: ""
+    }
+  });
+
   // Lê todas as partidas do Oracle
   const { data: matches, refetch: refetchMatches } = useContractRead({
     address: CONTRACTS.ORACLE,
     abi: oracleAbi,
     functionName: "getAllMatches",
+    watch: true,
   });
 
   // Hook para criar partida no Oracle
-  const { write: createMatch } = useContractWrite({
-    address: CONTRACTS.ORACLE,
-    abi: [
-      {
-        inputs: [
-          { internalType: "string", name: "championshipName", type: "string" },
-          { internalType: "string", name: "teamA", type: "string" },
-          { internalType: "string", name: "teamB", type: "string" },
-          { internalType: "uint256", name: "matchDate", type: "uint256" },
-          { internalType: "uint256", name: "matchTime", type: "uint256" }
-        ],
-        name: "createMatch",
-        outputs: [],
-        stateMutability: "nonpayable",
-        type: "function"
-      }
-    ],
+  const { write, isLoading: isCreateLoading } = useContractWrite({
+    address: CONTRACTS.ORACLE as `0x${string}`,
+    abi: oracleAbi,
     functionName: "createMatch",
     mode: 'prepared',
     onSuccess(data) {
-      console.log('Transação enviada:', data.hash);
+      setStatus("Transação enviada! Aguardando confirmação...");
+      data.wait().then(() => {
+        setStatus("Partida criada com sucesso!");
+        form.reset();
+        refetchMatches?.();
+      });
     },
     onError(error) {
-      console.error('Erro na transação:', error);
+      setStatus(`Erro ao criar partida: ${error.message}`);
     }
   });
-
-  // Hook para inicializar partida no sistema de apostas
-  const { write: initializeMatch } = useContractWrite({
-    address: CONTRACTS.BETS,
-    abi: betsAbi,
-    functionName: "initializeMatch",
-    mode: 'prepared',
-  });
-
-  // Form para criar nova partida
-  const form = useForm<z.infer<typeof matchSchema>>({
-    resolver: zodResolver(matchSchema),
-  });
-
-  // Função para traduzir o enum MatchOutcome
-  const getOutcomeText = (outcome: number) => {
-    switch (outcome) {
-      case MatchOutcome.Pending: return "Aguardando Início";
-      case MatchOutcome.Underway: return "Em Andamento";
-      case MatchOutcome.Draw: return "Empate";
-      case MatchOutcome.Decided: return "Finalizada";
-      default: return "Desconhecido";
-    }
-  };
 
   // Criar e inicializar nova partida
   const handleCreateMatch = async (values: z.infer<typeof matchSchema>) => {
     try {
       setIsLoading(true);
-      
-      // Chama o contrato
-      const tx = await createMatch?.({
+
+      write?.({
         args: [
           values.championshipName,
           values.teamA,
@@ -222,20 +199,19 @@ export function OracleTab() {
         ],
       });
 
-      if (tx) {
-        setStatus(`Transação enviada! Hash: ${tx.hash}`);
-        await tx.wait();
-        setStatus("Partida criada com sucesso!");
-        form.reset();
-        refetchMatches();
-      }
-
     } catch (error) {
       console.error("Erro ao criar partida:", error);
-      setStatus("Erro ao criar partida. Verifique o console para mais detalhes.");
+      setStatus(`Erro ao criar partida: ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Função para formatar timestamp
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo'
+    });
   };
 
   return (
@@ -357,10 +333,13 @@ export function OracleTab() {
 
               <Button 
                 type="submit" 
-                disabled={isLoading}
+                disabled={isLoading || isCreateLoading}
                 className="w-full"
               >
-                {isLoading ? "Criando..." : "Criar Partida"}
+                {isLoading || isCreateLoading 
+                  ? "Criando..." 
+                  : "Criar Partida"
+                }
               </Button>
             </form>
           </Form>
@@ -374,26 +353,24 @@ export function OracleTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {matches?.map((match) => {
-              const { date, time } = formatDateTime(Number(match.timestamp));
-              return (
+            {matches && matches.length > 0 ? (
+              matches.map((match) => (
                 <div 
                   key={match.id}
                   className="p-4 bg-gray-50 rounded-lg space-y-2"
                 >
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-semibold">{match.name}</p>
-                      <p className="text-sm text-gray-500">{match.description}</p>
+                      <p className="font-semibold">{match.championshipName}</p>
+                      <p className="text-sm text-gray-600">
+                        {match.teamA} vs {match.teamB}
+                      </p>
                       <div className="flex space-x-4 mt-1">
                         <p className="text-sm text-gray-500">
-                          Data: {date}
+                          Data: {formatDate(Number(match.matchDate))}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Horário: {time}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Status: {getOutcomeText(match.outcome)}
+                          Status: {getOutcomeText(Number(match.outcome))}
                         </p>
                       </div>
                     </div>
@@ -402,8 +379,12 @@ export function OracleTab() {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              ))
+            ) : (
+              <p className="text-center text-gray-500">
+                Nenhuma partida registrada.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
