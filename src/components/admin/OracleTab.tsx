@@ -141,6 +141,17 @@ interface Match {
   active: boolean;
 }
 
+// Interface para os dados da partida retornados pelo Oracle
+interface OracleMatch {
+  id: `0x${string}`;
+  name: string;
+  participants: string;
+  participantCount: number;
+  date: bigint;
+  outcome: number;
+  winner: number;
+}
+
 export function OracleTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -159,7 +170,7 @@ export function OracleTab() {
 
   // Lê todas as partidas do Oracle
   const { data: matches, refetch: refetchMatches } = useContractRead({
-    address: CONTRACTS.ORACLE,
+    address: CONTRACTS.ORACLE as `0x${string}`,
     abi: oracleAbi,
     functionName: "getAllMatches",
     watch: true,
@@ -207,11 +218,39 @@ export function OracleTab() {
     }
   };
 
-  // Função para formatar timestamp
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString('pt-BR', {
-      timeZone: 'America/Sao_Paulo'
-    });
+  // Função para formatar data e hora
+  const formatDateTime = (timestamp: bigint) => {
+    const date = new Date(Number(timestamp) * 1000); // Converte de segundos para milissegundos
+    
+    return {
+      date: date.toLocaleDateString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }),
+      time: date.toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+  };
+
+  // Função para retornar o status da partida
+  const getMatchStatus = (outcome: number) => {
+    switch (outcome) {
+      case 0:
+        return "Pendente";
+      case 1:
+        return "Em Andamento";
+      case 2:
+        return "Empate";
+      case 3:
+        return "Finalizada";
+      default:
+        return "Desconhecido";
+    }
   };
 
   return (
@@ -354,32 +393,54 @@ export function OracleTab() {
         <CardContent>
           <div className="space-y-4">
             {matches && matches.length > 0 ? (
-              matches.map((match) => (
-                <div 
-                  key={match.id}
-                  className="p-4 bg-gray-50 rounded-lg space-y-2"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{match.championshipName}</p>
-                      <p className="text-sm text-gray-600">
-                        {match.teamA} vs {match.teamB}
-                      </p>
-                      <div className="flex space-x-4 mt-1">
-                        <p className="text-sm text-gray-500">
-                          Data: {formatDate(Number(match.matchDate))}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Status: {getOutcomeText(Number(match.outcome))}
-                        </p>
+              matches.map((match: OracleMatch) => {
+                const { date, time } = formatDateTime(match.date);
+                return (
+                  <div 
+                    key={match.id}
+                    className="p-4 bg-gray-50 rounded-lg space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-lg">{match.name}</h3>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Times:</span> {match.participants}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Data:</span> {date}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Horário:</span> {time}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Participantes:</span> {match.participantCount}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Status:</span>{" "}
+                            <span className={`
+                              ${match.outcome === 0 ? "text-yellow-600" : ""}
+                              ${match.outcome === 1 ? "text-blue-600" : ""}
+                              ${match.outcome === 2 ? "text-purple-600" : ""}
+                              ${match.outcome === 3 ? "text-green-600" : ""}
+                            `}>
+                              {getMatchStatus(match.outcome)}
+                            </span>
+                          </p>
+                          {match.winner !== -1 && (
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Vencedor:</span> {match.winner}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ID: {match.id.slice(0, 10)}...
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      ID: {match.id.slice(0, 10)}...
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-center text-gray-500">
                 Nenhuma partida registrada.
