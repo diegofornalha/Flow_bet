@@ -125,7 +125,7 @@ forge test --gas-report > gas-report.txt
 
 forge coverage --match-contract BetPayoutTest --report summary | grep BetPayout
 
-forge coverage --match-contract BetsTest --report summary | grep Bets
+forge coverage --match-contract DisableableTest --report summary | grep Disableable
 
 # Executar teste com debug (pra saber o que está acontecendo)
 

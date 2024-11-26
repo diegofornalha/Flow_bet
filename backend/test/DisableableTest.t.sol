@@ -11,7 +11,7 @@ contract DisableableTest is Test {
         disableable = new Disableable(address(this));
     }
 
-    function testInitialDisabledState() public view {
+    function testInitialDisabledState() public {
         bool initialState = disableable.disabled();
         assertEq(initialState, false, "Initial state should be false");
     }
@@ -34,5 +34,12 @@ contract DisableableTest is Test {
         disableable.disable();
         vm.expectRevert("Contract is disabled");
         disableable.protectedFunction();
+    }
+
+    function testAnotherProtectedFunction() public {
+        disableable.anotherProtectedFunction();
+        disableable.disable();
+        vm.expectRevert("Contract is disabled");
+        disableable.anotherProtectedFunction();
     }
 }
