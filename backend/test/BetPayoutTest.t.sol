@@ -19,7 +19,7 @@ contract BetPayoutTest is Test {
         vm.deal(address(betPayout), 10 ether);
     }
 
-    function testConstructor() public {
+    function testConstructor() public view {
         assertEq(
             betPayout.house(),
             address(this),
