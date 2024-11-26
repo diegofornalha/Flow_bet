@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import Image from "next/image";
 import brasilLogo from "@/src/public/assets/brasil.png";
 import argentinaLogo from "@/src/public/assets/argentina.png";
+import { CONTRACTS } from "@/src/config/contracts";
+import { betPayoutAbi } from "@/src/config/abis";
 
 const abi = [
   {
@@ -111,7 +113,7 @@ const formSchema = z.object({
 
 export function BettingCard() {
   const { data } = useReadContract({
-    address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
+    address: CONTRACTS.BETS,
     abi,
     functionName: "viewVolume",
     args: [],
@@ -141,19 +143,30 @@ export function BettingCard() {
     setTransactionStatus(null);
     try {
       const hash = await writeContract({
-        address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
+        address: CONTRACTS.BETS,
         abi: abi,
-        functionName: "placeBets",
+        functionName: selectedTeam === "BRZ" ? "placeBets" : "placeBetsJag",
         args: [BigInt(values.amount)],
       });
 
       if (typeof hash === "object" && hash !== null) {
         setTransactionStatus("Aposta enviada com sucesso!");
+        
+        // Verificar pagamento usando useReadContract
+        const { data: payoutResult } = await useReadContract({
+          address: CONTRACTS.BETPAYOUT,
+          abi: betPayoutAbi,
+          functionName: "checkPayout",
+          args: [hash]
+        });
+        
+        console.log("Status do pagamento:", payoutResult);
       } else {
         throw new Error("Transação não foi criada.");
       }
     } catch (error) {
       console.error("Erro ao executar o contrato:", error);
+      setTransactionStatus("Erro ao processar aposta. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }

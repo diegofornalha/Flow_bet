@@ -4,10 +4,14 @@ import { useState } from "react";
 import { useReadContract } from "wagmi";
 import Image, { StaticImageData } from "next/image";
 import { BettingCard } from "@/src/components/BettingCard"; // Importando o BettingCard
+import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
 
 import flow from "@/src/public/assets/flow.png";
 import brasilLogo from "@/src/public/assets/brasil.png";
 import argentinaLogo from "@/src/public/assets/argentina.png";
+import { useAdmin } from "@/src/hooks/useAdmin";
+import { AdminModal } from "@/src/components/AdminModal";
 
 // Object mapping team names to their logo URLs
 const teamLogos: Record<string, StaticImageData> = {
@@ -96,7 +100,7 @@ function useNFLGames() {
   ] as const;
 
   const { data } = useReadContract({
-    address: "0x6224f3e0c3deDB6Da90A9545A9528cbed5DD7E53",
+    address: "0xe652bC36eb4D8F40F245ba9Aa3282CeB1dDe7796",
     abi,
     functionName: "viewVolume",
     args: [],
@@ -117,6 +121,8 @@ const Home: NextPage = () => {
     game: string;
     team: string;
   } | null>(null);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const isAdmin = useAdmin();
 
   const copaAmericaGames = [
     {
@@ -146,35 +152,27 @@ const Home: NextPage = () => {
           position: "relative",
         }}
       >
-        {/* Cabeçalho com Logo e Botão Connect */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "40px",
-            padding: "0 20px",
-          }}
-        >
-          {/* Logo e Título */}
+        {/* Cabeçalho com Logo e Botões */}
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          marginBottom: "40px",
+          padding: "0 20px",
+        }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <Image
-              src={flow}
-              alt="Logo Flow"
-              width={42}
-              height={42}
-              style={{ marginRight: "12px" }}
-            />
-            <h1 style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "#1a1a1a",
-              margin: 0,
-            }}>
-              FlowBets
-            </h1>
+            <Image src={flow} alt="Logo Flow" width={42} height={42} />
+            <h1>FlowBets</h1>
           </div>
-          <ConnectButton />
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <Button 
+              variant="outline"
+              onClick={() => setIsAdminModalOpen(true)}
+            >
+              Painel Admin
+            </Button>
+            <ConnectButton />
+          </div>
         </div>
 
         {/* Container Principal */}
@@ -299,6 +297,11 @@ const Home: NextPage = () => {
           </div>
         </div>
       </div>
+
+      <AdminModal 
+        isOpen={isAdminModalOpen} 
+        onOpenChange={setIsAdminModalOpen}
+      />
     </>
   );
 }
