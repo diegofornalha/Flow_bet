@@ -14,9 +14,9 @@ interface ILock extends BaseContract {
 }
 
 describe("Lock", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
+  // Definimos uma fixture para reutilizar a mesma configuração em todos os testes.
+  // Usamos loadFixture para executar esta configuração uma vez, fazer snapshot do estado,
+  // e resetar a Hardhat Network para esse snapshot em cada teste.
   async function deployOneYearLockFixture() {
     const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
     const ONE_GWEI = 1_000_000_000;
@@ -24,7 +24,7 @@ describe("Lock", function () {
     const lockedAmount = ONE_GWEI;
     const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
 
-    // Contracts are deployed using the first signer/account by default
+    // Contratos são implantados usando a primeira conta/signer por padrão
     const [owner, otherAccount] = await hre.ethers.getSigners();
 
     const Lock = await hre.ethers.getContractFactory("Lock");
@@ -33,20 +33,20 @@ describe("Lock", function () {
     return { lock, unlockTime, lockedAmount, owner, otherAccount };
   }
 
-  describe("Deployment", function () {
-    it("Should set the right unlockTime", async function () {
+  describe("Implantação", function () {
+    it("Deve definir o tempo de desbloqueio correto", async function () {
       const { lock, unlockTime } = await loadFixture(deployOneYearLockFixture);
 
       expect(await lock.unlockTime()).to.equal(unlockTime);
     });
 
-    it("Should set the right owner", async function () {
+    it("Deve definir o proprietário correto", async function () {
       const { lock, owner } = await loadFixture(deployOneYearLockFixture);
 
       expect(await lock.owner()).to.equal(owner.address);
     });
 
-    it("Should receive and store the funds to lock", async function () {
+    it("Deve receber e armazenar os fundos para bloquear", async function () {
       const { lock, lockedAmount } = await loadFixture(
         deployOneYearLockFixture
       );
@@ -56,8 +56,8 @@ describe("Lock", function () {
       );
     });
 
-    it("Should fail if the unlockTime is not in the future", async function () {
-      // We don't use the fixture here because we want a different deployment
+    it("Deve falhar se o tempo de desbloqueio não estiver no futuro", async function () {
+      // Não usamos a fixture aqui porque queremos uma implantação diferente
       const latestTime = await time.latest();
       const Lock = await hre.ethers.getContractFactory("Lock");
       await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
@@ -66,9 +66,9 @@ describe("Lock", function () {
     });
   });
 
-  describe("Withdrawals", function () {
-    describe("Validations", function () {
-      it("Should revert with the right error if called too soon", async function () {
+  describe("Saques", function () {
+    describe("Validações", function () {
+      it("Deve reverter com o erro correto se chamado muito cedo", async function () {
         const { lock } = await loadFixture(deployOneYearLockFixture);
 
         await expect(lock.withdraw()).to.be.revertedWith(
@@ -76,34 +76,34 @@ describe("Lock", function () {
         );
       });
 
-      it("Should revert with the right error if called from another account", async function () {
+      it("Deve reverter com o erro correto se chamado de outra conta", async function () {
         const { lock, unlockTime, otherAccount } = await loadFixture(
           deployOneYearLockFixture
         );
 
-        // We can increase the time in Hardhat Network
+        // Podemos aumentar o tempo na Hardhat Network
         await time.increaseTo(unlockTime);
 
-        // We use lock.connect() to send a transaction from another account
+        // Usamos lock.connect() para enviar uma transação de outra conta
         await expect((lock.connect(otherAccount) as ILock).withdraw()).to.be.revertedWith(
           "You aren't the owner"
         );
       });
 
-      it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
+      it("Não deve falhar se o tempo de desbloqueio chegou e o proprietário o chama", async function () {
         const { lock, unlockTime } = await loadFixture(
           deployOneYearLockFixture
         );
 
-        // Transactions are sent using the first signer by default
+        // Transações são enviadas usando o primeiro signer por padrão
         await time.increaseTo(unlockTime);
 
         await expect(lock.withdraw()).not.to.be.reverted;
       });
     });
 
-    describe("Events", function () {
-      it("Should emit an event on withdrawals", async function () {
+    describe("Eventos", function () {
+      it("Deve emitir um evento nos saques", async function () {
         const { lock, unlockTime, lockedAmount } = await loadFixture(
           deployOneYearLockFixture
         );
@@ -112,12 +112,12 @@ describe("Lock", function () {
 
         await expect(lock.withdraw())
           .to.emit(lock, "Withdrawal")
-          .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
+          .withArgs(lockedAmount, anyValue); // Aceitamos qualquer valor como argumento 'when'
       });
     });
 
-    describe("Transfers", function () {
-      it("Should transfer the funds to the owner", async function () {
+    describe("Transferências", function () {
+      it("Deve transferir os fundos para o proprietário", async function () {
         const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
           deployOneYearLockFixture
         );
