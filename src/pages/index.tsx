@@ -19,104 +19,7 @@ const teamLogos: Record<string, StaticImageData> = {
   Argentina: argentinaLogo,
 };
 
-// Hook personalizado para lógica de contrato
-function useNFLGames() {
-  const abi = [
-    {
-      inputs: [],
-      stateMutability: "nonpayable",
-      type: "constructor",
-    },
-    {
-      inputs: [],
-      name: "getA",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-      ],
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      inputs: [],
-      name: "getB",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-      ],
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      inputs: [],
-      name: "viewVolume",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-      ],
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "amount",
-          type: "uint256",
-        },
-      ],
-      name: "placeBets",
-      outputs: [],
-      stateMutability: "nonpayable",
-      type: "function",
-    },
-    {
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "amount",
-          type: "uint256",
-        },
-      ],
-      name: "placeBetsJag",
-      outputs: [],
-      stateMutability: "nonpayable",
-      type: "function",
-    },
-  ] as const;
-
-  const { data } = useReadContract({
-    address: "0xe652bC36eb4D8F40F245ba9Aa3282CeB1dDe7796",
-    abi,
-    functionName: "viewVolume",
-    args: [],
-  });
-
-  const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
-  const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
-  const total = tokenA + tokenB;
-  const priceA = total > 0 ? 100 * (tokenA / total) : 0;
-  const priceB = total > 0 ? 100 * (tokenB / total) : 0;
-
-  return { total, priceA, priceB };
-}
-
 const Home: NextPage = () => {
-  const { total, priceA, priceB } = useNFLGames();
   const [selectedGame, setSelectedGame] = useState<{
     game: string;
     team: string;
@@ -124,16 +27,15 @@ const Home: NextPage = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const isAdmin = useAdmin();
 
+  // Dados estáticos para a primeira tela
   const copaAmericaGames = [
     {
       time: "6:30 AM",
-      volume: total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       teams: [
-        { name: "Brasil", record: "0-0", price: priceA },
-        { name: "Argentina", record: "0-0", price: priceB },
+        { name: "Brasil", record: "0-0" },
+        { name: "Argentina", record: "0-0" }
       ],
-    },
-    // ... other games if needed ...
+    }
   ];
 
   const selectTeam = (game: string, team: string) => {
@@ -142,16 +44,14 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <div
-        style={{
-          backgroundColor: "#f5f5f7",
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          padding: "40px",
-          position: "relative",
-        }}
-      >
+      <div style={{
+        backgroundColor: "#f5f5f7",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        padding: "40px",
+        position: "relative",
+      }}>
         {/* Cabeçalho com Logo e Botões */}
         <div style={{ 
           display: "flex", 
@@ -225,7 +125,6 @@ const Home: NextPage = () => {
                   }}
                 >
                   <span>Horário: {game.time}</span>
-                  <span>Volume: {game.volume} FLOW</span>
                 </div>
 
                 {/* Times */}
@@ -239,24 +138,15 @@ const Home: NextPage = () => {
                       key={teamIndex}
                       style={{
                         flex: "1",
-                        backgroundColor: selectedGame?.game === game.time &&
-                          selectedGame?.team === team.name
+                        backgroundColor: selectedGame?.team === team.name
                           ? "#d1fae5"
                           : "#f3f4f6",
-                        color: selectedGame?.game === game.time &&
-                          selectedGame?.team === team.name
-                          ? "#065f46"
-                          : "#1f2937",
                         padding: "16px",
                         borderRadius: "12px",
-                        border: "1px solid #e5e7eb",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        overflow: "hidden",
-                        transition: "all 0.2s ease",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
                       }}
                       onClick={() => selectTeam(game.time, team.name)}
                     >
@@ -265,25 +155,18 @@ const Home: NextPage = () => {
                         alt={`Logo ${team.name}`}
                         width={32}
                         height={32}
-                        style={{ marginRight: "12px" }}
                       />
                       <div style={{
                         display: "flex",
                         flexDirection: "column",
                         flex: "1",
-                        overflow: "hidden", // Garante que o texto não saia do botão
+                        marginLeft: "12px",
                       }}>
-                        <span style={{ fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.name}</span>
+                        <span style={{ fontWeight: "500" }}>{team.name}</span>
                         <span style={{ fontSize: "14px", color: "#666" }}>
-                          Histórico: {team.record}
+                          {team.record}
                         </span>
                       </div>
-                      <span style={{ 
-                        fontWeight: "bold",
-                        fontSize: "18px" 
-                      }}>
-                        ${isNaN(team.price) ? "0.00" : team.price.toFixed(2)}
-                      </span>
                     </div>
                   ))}
                 </div>

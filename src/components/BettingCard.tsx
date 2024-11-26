@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { z } from "zod";
 
 import {
@@ -112,11 +112,15 @@ const formSchema = z.object({
 });
 
 export function BettingCard() {
-  const { data } = useReadContract({
+  const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
+  const [isMinimized, setIsMinimized] = useState(true);
+
+  const { data } = useContractRead({
     address: CONTRACTS.BETS,
     abi,
     functionName: "viewVolume",
-    args: [],
   });
 
   const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
@@ -125,8 +129,12 @@ export function BettingCard() {
   const priceA = totalTokens > 0 ? 100 * (tokenA / totalTokens) : 0;
   const priceB = totalTokens > 0 ? 100 * (tokenB / totalTokens) : 0;
 
-  const { writeContract } = useWriteContract();
-  const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
+  const { write: writeContract } = useContractWrite({
+    address: CONTRACTS.BETS,
+    abi,
+    functionName: selectedTeam === "BRZ" ? "placeBets" : "placeBetsJag",
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -134,36 +142,24 @@ export function BettingCard() {
     },
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
-  const [isMinimized, setIsMinimized] = useState(true);
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     setTransactionStatus(null);
     try {
-      const hash = await writeContract({
-        address: CONTRACTS.BETS,
-        abi: abi,
-        functionName: selectedTeam === "BRZ" ? "placeBets" : "placeBetsJag",
+      await writeContract({
         args: [BigInt(values.amount)],
       });
 
-      if (typeof hash === "object" && hash !== null) {
-        setTransactionStatus("Aposta enviada com sucesso!");
-        
-        // Verificar pagamento usando useReadContract
-        const { data: payoutResult } = await useReadContract({
-          address: CONTRACTS.BETPAYOUT,
-          abi: betPayoutAbi,
-          functionName: "checkPayout",
-          args: [hash]
-        });
-        
-        console.log("Status do pagamento:", payoutResult);
-      } else {
-        throw new Error("Transação não foi criada.");
-      }
+      setTransactionStatus("Aposta enviada com sucesso!");
+      
+      // Verificar pagamento
+      const { data: payoutResult } = await useContractRead({
+        address: CONTRACTS.BETPAYOUT,
+        abi: betPayoutAbi,
+        functionName: "checkPayout",
+      });
+      
+      console.log("Status do pagamento:", payoutResult);
     } catch (error) {
       console.error("Erro ao executar o contrato:", error);
       setTransactionStatus("Erro ao processar aposta. Tente novamente.");

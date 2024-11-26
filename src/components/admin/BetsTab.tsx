@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -14,7 +14,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "../ui/form";
+import { Switch } from "../ui/switch";
+import { generateMatchId } from "@/src/utils/generateId";
 
 const betsAbi = [
   {
@@ -25,14 +28,14 @@ const betsAbi = [
     type: "function",
   },
   {
-    inputs: [],
+    inputs: [{ internalType: "bytes32", name: "matchId", type: "bytes32" }],
     name: "disable",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
   },
   {
-    inputs: [],
+    inputs: [{ internalType: "bytes32", name: "matchId", type: "bytes32" }],
     name: "enable",
     outputs: [],
     stateMutability: "nonpayable",
@@ -66,39 +69,45 @@ const betsAbi = [
 ] as const;
 
 const createMatchSchema = z.object({
-  matchId: z.string().min(1, "ID da partida é obrigatório"),
+  matchId: z.string().startsWith("0x", "ID deve começar com 0x"),
 });
+
+type FormData = z.infer<typeof createMatchSchema>;
 
 export function BetsTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [weekNumber, setWeekNumber] = useState<number>(1);
+  const [matchNumber, setMatchNumber] = useState<number>(1);
+  const [selectedMatch, setSelectedMatch] = useState<{ id: string; isDisabled: boolean } | null>(null);
 
-  const { writeContract } = useWriteContract();
-  
-  // Lê o status de disabled
-  const { data: isDisabled } = useReadContract({
-    address: CONTRACTS.BETS,
-    abi: betsAbi,
-    functionName: "disabled",
-  });
-
-  const form = useForm<z.infer<typeof createMatchSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(createMatchSchema),
     defaultValues: {
       matchId: "",
     },
   });
 
+  const { data: matchesData } = useContractRead({
+    address: CONTRACTS.BETS,
+    abi: betsAbi,
+    functionName: "disabled",
+  });
+
+  const { write: writeContract } = useContractWrite({
+    address: CONTRACTS.BETS,
+    abi: betsAbi,
+    functionName: "createMatch",
+  });
+
   // Criar nova partida
-  const handleCreateMatch = async (values: z.infer<typeof createMatchSchema>) => {
+  const handleCreateMatch = async (values: FormData) => {
     try {
       setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.BETS,
-        abi: betsAbi,
-        functionName: "createMatch",
+      const hash = await writeContract({
         args: [values.matchId as `0x${string}`],
       });
+
       setStatus("Partida criada com sucesso!");
       form.reset();
     } catch (error) {
@@ -109,37 +118,17 @@ export function BetsTab() {
     }
   };
 
-  // Habilitar/Desabilitar sistema
-  const handleToggleSystem = async () => {
+  // Habilitar/Desabilitar partida
+  const handleToggleMatch = async (matchId: string, disable: boolean) => {
     try {
       setIsLoading(true);
       await writeContract({
-        address: CONTRACTS.BETS,
-        abi: betsAbi,
-        functionName: isDisabled ? "enable" : "disable",
+        args: [matchId as `0x${string}`, disable],
       });
-      setStatus(`Sistema ${isDisabled ? "habilitado" : "desabilitado"} com sucesso!`);
+      setStatus(`Partida ${disable ? "desabilitada" : "habilitada"} com sucesso!`);
     } catch (error) {
-      console.error("Erro ao alterar status do sistema:", error);
-      setStatus("Erro ao alterar status do sistema");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Sacar fundos
-  const handleWithdraw = async () => {
-    try {
-      setIsLoading(true);
-      await writeContract({
-        address: CONTRACTS.BETS,
-        abi: betsAbi,
-        functionName: "withdraw",
-      });
-      setStatus("Saque realizado com sucesso!");
-    } catch (error) {
-      console.error("Erro ao realizar saque:", error);
-      setStatus("Erro ao realizar saque");
+      console.error("Erro ao alterar status da partida:", error);
+      setStatus("Erro ao alterar status da partida");
     } finally {
       setIsLoading(false);
     }
@@ -147,24 +136,6 @@ export function BetsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Status do Sistema */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Status do Sistema</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p>Sistema está: {isDisabled ? "Desabilitado" : "Habilitado"}</p>
-            <Button 
-              onClick={handleToggleSystem}
-              disabled={isLoading}
-            >
-              {isDisabled ? "Habilitar Sistema" : "Desabilitar Sistema"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Criar Nova Partida */}
       <Card>
         <CardHeader>
@@ -178,35 +149,35 @@ export function BetsTab() {
                 name="matchId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ID da Partida (bytes32)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0x..." {...field} />
-                    </FormControl>
+                    <FormLabel>ID da Partida</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          placeholder="0x..."
+                          className="font-mono"
+                        />
+                      </FormControl>
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const newId = generateMatchId(weekNumber, matchNumber);
+                          form.setValue("matchId", newId);
+                        }}
+                      >
+                        Gerar ID
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading}>
-                Criar Partida
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Criando..." : "Criar Partida"}
               </Button>
             </form>
           </Form>
-        </CardContent>
-      </Card>
-
-      {/* Ações Administrativas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ações Administrativas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={handleWithdraw}
-            disabled={isLoading}
-            className="w-full"
-          >
-            Sacar Fundos
-          </Button>
         </CardContent>
       </Card>
 
