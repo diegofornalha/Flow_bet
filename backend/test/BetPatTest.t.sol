@@ -37,4 +37,39 @@ contract BetPatTest is Test {
         uint256 newAmountB = betPat.getB();
         assertEq(newAmountB, initialAmountB + betAmount);
     }
+
+    function testPlaceBetsZeroAmount() public {
+        vm.expectRevert("Quantidade deve ser maior que zero");
+        betPat.placeBets(0);
+    }
+
+    function testPlaceBetsJagZeroAmount() public {
+        vm.expectRevert("Quantidade deve ser maior que zero");
+        betPat.placeBetsJag(0);
+    }
+
+    function testPlaceBetsMaxAmount() public {
+        uint256 maxAmount = type(uint256).max - betPat.getA();
+        betPat.placeBets(maxAmount);
+        assertEq(betPat.getA(), type(uint256).max);
+    }
+
+    function testPlaceBetsJagMaxAmount() public {
+        uint256 maxAmount = type(uint256).max - betPat.getB();
+        betPat.placeBetsJag(maxAmount);
+        assertEq(betPat.getB(), type(uint256).max);
+    }
+
+    function testViewVolume() public {
+        (uint256 volumeA, uint256 volumeB) = betPat.viewVolume();
+        assertEq(volumeA, 100);
+        assertEq(volumeB, 100);
+
+        betPat.placeBets(50);
+        betPat.placeBetsJag(30);
+
+        (volumeA, volumeB) = betPat.viewVolume();
+        assertEq(volumeA, 150);
+        assertEq(volumeB, 130);
+    }
 }
