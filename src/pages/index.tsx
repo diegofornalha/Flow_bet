@@ -62,7 +62,6 @@ const Home: NextPage = () => {
         }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <Image src={flow} alt="Logo Flow" width={42} height={42} />
-            <h1>FlowBets</h1>
           </div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <Button 
