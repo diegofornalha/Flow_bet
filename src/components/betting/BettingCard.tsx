@@ -224,12 +224,12 @@ export function BettingCard() {
   return (
     <Card className="w-full bg-white text-black shadow-lg">
       <CardHeader>
-        {match && !match.isLoading && (
+        {match && !match.isLoading && match.date && (
           <div className="text-center mb-4">
             <h2 className="text-xl font-bold">{match.name}</h2>
             <p className="text-sm text-gray-600">{match.participants}</p>
             <p className="text-sm text-gray-500">
-              {match.date.toLocaleDateString('pt-BR', {
+              {match.date instanceof Date ? match.date.toLocaleDateString('pt-BR', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -237,7 +237,7 @@ export function BettingCard() {
                 hour: '2-digit',
                 minute: '2-digit',
                 timeZone: 'America/Sao_Paulo'
-              })}
+              }) : 'Data não disponível'}
             </p>
           </div>
         )}
