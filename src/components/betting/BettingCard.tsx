@@ -68,14 +68,15 @@ export function BettingCard() {
   const [selectedTeam, setSelectedTeam] = useState<string>("BRZ");
   const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
 
-  const { data } = useContractRead({
+  const { data: volumeData } = useContractRead({
     address: CONTRACTS.BETS,
     abi,
     functionName: "viewVolume",
+    watch: true,
   });
 
-  const tokenA = data?.[0] ? parseInt(data[0].toString()) : 0;
-  const tokenB = data?.[1] ? parseInt(data[1].toString()) : 0;
+  const tokenA = volumeData?.[0] ? Number(volumeData[0]) : 0;
+  const tokenB = volumeData?.[1] ? Number(volumeData[1]) : 0;
   const totalTokens = tokenA + tokenB;
 
   const calculatePrices = () => {
