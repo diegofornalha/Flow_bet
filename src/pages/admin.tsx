@@ -1,5 +1,5 @@
 import { useAdmin } from "@/src/hooks/useAdmin";
-import { useReadContract, useWriteContract } from "wagmi";
+import { useContractRead, useContractWrite } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -38,19 +38,19 @@ export default function AdminPage() {
   }
 
   // Leitura dos dados dos contratos
-  const { data: volumeData } = useReadContract({
+  const { data: volumeData } = useContractRead({
     address: CONTRACTS.BETS,
     abi: betsAbi,
     functionName: "viewVolume",
   });
 
-  const { data: oracleStatus } = useReadContract({
+  const { data: oracleStatus } = useContractRead({
     address: CONTRACTS.ORACLE,
-    abi: oracleAbi,
-    functionName: "isActive",
+    abi: disableableAbi,
+    functionName: "isDisabled",
   });
 
-  const { data: systemStatus } = useReadContract({
+  const { data: systemStatus } = useContractRead({
     address: CONTRACTS.DISABLEABLE,
     abi: disableableAbi,
     functionName: "isDisabled",
@@ -77,7 +77,7 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p>Oracle Ativo: {oracleStatus ? "Sim" : "Não"}</p>
+              <p>Oracle Ativo: {!oracleStatus ? "Sim" : "Não"}</p>
               <p>Sistema Desabilitado: {systemStatus ? "Sim" : "Não"}</p>
             </div>
           </CardContent>

@@ -305,8 +305,8 @@ export function BettingCard() {
                   <FormControl>
                     <Uint256Input
                       placeholder="Digite a quantia"
-                      value={field.value ? BigInt(field.value) : null}
-                      onChange={(value) => field.onChange(value?.toString() || '')}
+                      value={field.value}
+                      onChange={field.onChange}
                       className={fieldState.error ? "border-red-500" : ""}
                     />
                   </FormControl>

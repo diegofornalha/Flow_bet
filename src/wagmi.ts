@@ -1,7 +1,6 @@
 import { getDefaultWallets } from '@rainbow-me/rainbowkit';
 import { configureChains, createClient, Chain } from 'wagmi';
 import { publicProvider } from 'wagmi/providers/public';
-import { mainnet, goerli } from 'wagmi/chains';
 
 // Definindo Flow Mainnet EVM
 const flowMainnet: Chain = {

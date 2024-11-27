@@ -1,25 +1,39 @@
 import { useContractRead } from 'wagmi';
 import { CONTRACTS } from '@/src/config/contracts';
-import { oracleAbi } from '@/src/config/abis';
+
+const matchAbi = [
+  {
+    inputs: [{ internalType: "bytes32", name: "_matchId", type: "bytes32" }],
+    name: "getMatch",
+    outputs: [
+      { internalType: "bytes32", name: "id", type: "bytes32" },
+      { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "participants", type: "string" },
+      { internalType: "uint8", name: "participantCount", type: "uint8" },
+      { internalType: "uint256", name: "date", type: "uint256" },
+      { internalType: "uint8", name: "outcome", type: "uint8" },
+      { internalType: "int8", name: "winner", type: "int8" }
+    ],
+    stateMutability: "view",
+    type: "function"
+  }
+] as const;
 
 export function useMatch(matchId: string) {
   const { data, isError, isLoading } = useContractRead({
-    address: CONTRACTS.ORACLE,
-    abi: oracleAbi,
+    address: CONTRACTS.ORACLE as `0x${string}`,
+    abi: matchAbi,
     functionName: 'getMatch',
     args: [matchId as `0x${string}`],
   });
 
   if (data) {
-    const timestamp = Number(data[4]); // data[4] é o campo date do contrato
-    const date = new Date(timestamp * 1000); // Converter de segundos para milissegundos
-
     return {
       id: data[0],
       name: data[1],
       participants: data[2],
       participantCount: Number(data[3]),
-      date: date,
+      date: new Date(Number(data[4]) * 1000), // Converter de segundos para milissegundos
       outcome: Number(data[5]),
       winner: Number(data[6]),
       isLoading,

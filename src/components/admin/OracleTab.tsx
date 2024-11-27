@@ -141,15 +141,9 @@ interface Match {
   active: boolean;
 }
 
-// Interface para os dados da partida retornados pelo Oracle
+// Interface para os dados retornados pelo getAllMatches
 interface OracleMatch {
   id: `0x${string}`;
-  name: string;
-  participants: string;
-  participantCount: number;
-  date: bigint;
-  outcome: number;
-  winner: number;
 }
 
 export function OracleTab() {
@@ -169,11 +163,20 @@ export function OracleTab() {
   });
 
   // Lê todas as partidas do Oracle
-  const { data: matches, refetch: refetchMatches } = useContractRead({
+  const { data: matchIds } = useContractRead({
     address: CONTRACTS.ORACLE as `0x${string}`,
     abi: oracleAbi,
     functionName: "getAllMatches",
     watch: true,
+  });
+
+  // Hook para ler detalhes de cada partida
+  const { data: matchDetails, isLoading: isLoadingMatch } = useContractRead({
+    address: CONTRACTS.ORACLE as `0x${string}`,
+    abi: oracleAbi,
+    functionName: "getMatch",
+    args: matchIds ? [matchIds[0]] : undefined,
+    enabled: !!matchIds && matchIds.length > 0,
   });
 
   // Hook para criar partida no Oracle
@@ -187,7 +190,6 @@ export function OracleTab() {
       data.wait().then(() => {
         setStatus("Partida criada com sucesso!");
         form.reset();
-        refetchMatches?.();
       });
     },
     onError(error) {
@@ -392,55 +394,31 @@ export function OracleTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {matches && matches.length > 0 ? (
-              matches.map((match: OracleMatch) => {
-                const { date, time } = formatDateTime(match.date);
-                return (
-                  <div 
-                    key={match.id}
-                    className="p-4 bg-gray-50 rounded-lg space-y-2"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-lg">{match.name}</h3>
+            {matchIds && matchIds.length > 0 ? (
+              matchIds.map((matchId) => (
+                <div 
+                  key={matchId}
+                  className="p-4 bg-gray-50 rounded-lg space-y-2"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm font-mono text-gray-600">
+                        Match ID: {matchId}
+                      </p>
+                      {matchDetails && (
                         <div className="mt-2 space-y-1">
                           <p className="text-sm text-gray-600">
-                            <span className="font-medium">Times:</span> {match.participants}
+                            <span className="font-medium">Nome:</span> {matchDetails[1]}
                           </p>
                           <p className="text-sm text-gray-600">
-                            <span className="font-medium">Data:</span> {date}
+                            <span className="font-medium">Times:</span> {matchDetails[2]}
                           </p>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Horário:</span> {time}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Participantes:</span> {match.participantCount}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Status:</span>{" "}
-                            <span className={`
-                              ${match.outcome === 0 ? "text-yellow-600" : ""}
-                              ${match.outcome === 1 ? "text-blue-600" : ""}
-                              ${match.outcome === 2 ? "text-purple-600" : ""}
-                              ${match.outcome === 3 ? "text-green-600" : ""}
-                            `}>
-                              {getMatchStatus(match.outcome)}
-                            </span>
-                          </p>
-                          {match.winner !== -1 && (
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Vencedor:</span> {match.winner}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {match.id.slice(0, 10)}...
-                      </div>
+                      )}
                     </div>
                   </div>
-                );
-              })
+                </div>
+              ))
             ) : (
               <p className="text-center text-gray-500">
                 Nenhuma partida registrada.
