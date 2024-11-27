@@ -49,15 +49,19 @@ export function AdminModal({ isOpen, onOpenChange }: AdminModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="bets" className="w-full">
+        <Tabs defaultValue="oracle" className="w-full">
           <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="oracle">Oracle</TabsTrigger>
             <TabsTrigger value="bets">Bets</TabsTrigger>
             <TabsTrigger value="betpat">BetPat</TabsTrigger>
-            <TabsTrigger value="oracle">Oracle</TabsTrigger>
             <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="disable">Sistema</TabsTrigger>
             <TabsTrigger value="token">Mudar Token</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="oracle">
+            <OracleTab />
+          </TabsContent>
           
           <TabsContent value="bets">
             <BetsTab />
@@ -65,10 +69,6 @@ export function AdminModal({ isOpen, onOpenChange }: AdminModalProps) {
           
           <TabsContent value="betpat">
             <BetPatTab />
-          </TabsContent>
-          
-          <TabsContent value="oracle">
-            <OracleTab />
           </TabsContent>
           
           <TabsContent value="payout">

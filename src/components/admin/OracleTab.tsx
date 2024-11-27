@@ -149,6 +149,7 @@ interface OracleMatch {
 export function OracleTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [isLoadingList, setIsLoadingList] = useState(false);
 
   // Inicialização do formulário
   const form = useForm<z.infer<typeof matchSchema>>({
@@ -157,14 +158,14 @@ export function OracleTab() {
       championshipName: "",
       teamA: "",
       teamB: "",
-      matchDate: "",
-      matchTime: ""
+      matchDate: "1734748800", // Timestamp pré-preenchido
+      matchTime: "3600"        // Hora pré-preenchida (1 hora em segundos)
     }
   });
 
   // Lê todas as partidas do Oracle
-  const { data: matchIds } = useContractRead({
-    address: CONTRACTS.ORACLE as `0x${string}`,
+  const { data: matchIds, refetch: refetchMatches } = useContractRead({
+    address: CONTRACTS.ORACLE,
     abi: oracleAbi,
     functionName: "getAllMatches",
     watch: true,
@@ -255,6 +256,20 @@ export function OracleTab() {
     }
   };
 
+  // Função para buscar partidas
+  const handleFetchMatches = async () => {
+    try {
+      setIsLoadingList(true);
+      await refetchMatches();
+      setStatus("Lista de partidas atualizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao buscar partidas:", error);
+      setStatus("Erro ao buscar lista de partidas");
+    } finally {
+      setIsLoadingList(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Criar Nova Partida */}
@@ -318,23 +333,12 @@ export function OracleTab() {
                       <FormLabel>Data (Unix Timestamp)</FormLabel>
                       <FormControl>
                         <Uint256Input
-                          placeholder="Ex: 1703721600"
-                          value={field.value ? BigInt(field.value) : null}
-                          onChange={(value) => field.onChange(value?.toString() || '')}
+                          placeholder="Ex: 1734748800"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
                           className="font-mono"
                         />
                       </FormControl>
-                      <FormDescription>
-                        Timestamp em segundos desde 01/01/1970
-                        <a 
-                          href="https://www.unixtimestamp.com/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline ml-2"
-                        >
-                          Conversor
-                        </a>
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -348,24 +352,13 @@ export function OracleTab() {
                       <FormLabel>Horário (Segundos)</FormLabel>
                       <FormControl>
                         <Uint256Input
-                          placeholder="Ex: 43200 (12:00)"
-                          value={field.value ? BigInt(field.value) : null}
-                          onChange={(value) => field.onChange(value?.toString() || '')}
+                          placeholder="Ex: 3600 (1:00)"
+                          value={field.value}
+                          onChange={(value) => field.onChange(value)}
                           className="font-mono"
                           max={86399n} // 23:59:59 em segundos
                         />
                       </FormControl>
-                      <FormDescription>
-                        Segundos desde meia-noite (0-86399)
-                        <a 
-                          href="https://www.timeanddate.com/time/time-converter-calculator.html"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline ml-2"
-                        >
-                          Conversor
-                        </a>
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -390,41 +383,93 @@ export function OracleTab() {
       {/* Lista de Partidas */}
       <Card>
         <CardHeader>
-          <CardTitle>Partidas Registradas</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Partidas Registradas</CardTitle>
+            <Button 
+              onClick={handleFetchMatches}
+              disabled={isLoadingList}
+              size="sm"
+              className="bg-green-500 hover:bg-green-600"
+            >
+              {isLoadingList ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent mr-2"></div>
+                  Atualizando...
+                </>
+              ) : (
+                "Atualizar Lista"
+              )}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {matchIds && matchIds.length > 0 ? (
-              matchIds.map((matchId) => (
-                <div 
-                  key={matchId}
-                  className="p-4 bg-gray-50 rounded-lg space-y-2"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-sm font-mono text-gray-600">
-                        Match ID: {matchId}
-                      </p>
-                      {matchDetails && (
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Nome:</span> {matchDetails[1]}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Times:</span> {matchDetails[2]}
-                          </p>
-                        </div>
-                      )}
+          {isLoadingMatch ? (
+            <div className="p-6 text-center">
+              <div className="animate-spin h-6 w-6 border-2 border-green-500 rounded-full border-t-transparent mx-auto"></div>
+              <p className="mt-2 text-gray-500">Carregando partidas...</p>
+            </div>
+          ) : matchIds && matchIds.length > 0 ? (
+            <div className="space-y-4">
+              {matchIds.map((matchId) => {
+                // Usar useContractRead para cada matchId
+                const { data: match } = useContractRead({
+                  address: CONTRACTS.ORACLE as `0x${string}`,
+                  abi: oracleAbi,
+                  functionName: "getMatch",
+                  args: [matchId],
+                });
+
+                return (
+                  <div 
+                    key={matchId}
+                    className="p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-mono text-gray-600">
+                          ID: {matchId.slice(0, 10)}...
+                        </p>
+                        {match && (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Nome:</span> {match[1]}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Times:</span> {match[2]}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Data:</span> {
+                                new Date(Number(match[4]) * 1000).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  timeZone: 'America/Sao_Paulo'
+                                })
+                              }
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Status:</span> {
+                                match[5] === 0 ? "Pendente" :
+                                match[5] === 1 ? "Em Andamento" :
+                                match[5] === 2 ? "Empate" :
+                                match[5] === 3 ? "Finalizada" : "Desconhecido"
+                              }
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500">
-                Nenhuma partida registrada.
-              </p>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500">
+              Nenhuma partida registrada.
+            </p>
+          )}
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 import { useContractRead } from 'wagmi';
 import { CONTRACTS } from '@/src/config/contracts';
 
-const matchAbi = [
+const oracleAbi = [
   {
     inputs: [{ internalType: "bytes32", name: "_matchId", type: "bytes32" }],
     name: "getMatch",
@@ -21,8 +21,8 @@ const matchAbi = [
 
 export function useMatch(matchId: string) {
   const { data, isError, isLoading } = useContractRead({
-    address: CONTRACTS.ORACLE as `0x${string}`,
-    abi: matchAbi,
+    address: CONTRACTS.ORACLE,
+    abi: oracleAbi,
     functionName: 'getMatch',
     args: [matchId as `0x${string}`],
   });
@@ -33,7 +33,7 @@ export function useMatch(matchId: string) {
       name: data[1],
       participants: data[2],
       participantCount: Number(data[3]),
-      date: new Date(Number(data[4]) * 1000), // Converter de segundos para milissegundos
+      date: new Date(Number(data[4]) * 1000),
       outcome: Number(data[5]),
       winner: Number(data[6]),
       isLoading,

@@ -138,7 +138,7 @@ export function BettingCard() {
   } = useContractWrite({
     address: CONTRACTS.BETS,
     abi,
-    functionName: selectedTeam === "BRZ" ? "placeBets" : "placeBetsJag",
+    functionName: selectedTeam === "BRZ" ? "placeBetsA" : "placeBetsB",
     mode: 'prepared',
   });
 

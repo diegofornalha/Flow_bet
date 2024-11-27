@@ -7,12 +7,12 @@ import { oracleAbi, betsAbi } from "@/src/config/abis";
 
 interface OracleMatch {
   id: `0x${string}`;
-  championshipName: string;
-  teamA: string;
-  teamB: string;
-  matchDate: bigint;
-  matchTime: bigint;
+  name: string;
+  participants: string;
+  participantCount: number;
+  date: bigint;
   outcome: number;
+  winner: number;
 }
 
 export function BetsTab() {
@@ -20,7 +20,7 @@ export function BetsTab() {
   const [status, setStatus] = useState<string | null>(null);
 
   // Lê as partidas do Oracle
-  const { data: oracleMatches } = useContractRead({
+  const { data: matches } = useContractRead({
     address: CONTRACTS.ORACLE as `0x${string}`,
     abi: oracleAbi,
     functionName: "getAllMatches",
@@ -76,20 +76,18 @@ export function BetsTab() {
           <CardTitle>Partidas Pendentes de Inicialização</CardTitle>
         </CardHeader>
         <CardContent>
-          {oracleMatches && oracleMatches.length > 0 ? (
+          {matches && matches.length > 0 ? (
             <div className="space-y-4">
-              {oracleMatches.map((match: OracleMatch) => (
+              {matches.map((matchId) => (
                 <div 
-                  key={match.id}
+                  key={matchId}
                   className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
                 >
                   <div>
-                    <p className="font-semibold">{match.championshipName}</p>
-                    <p className="text-sm text-gray-600">{match.teamA} vs {match.teamB}</p>
-                    <p className="text-xs text-gray-500">ID: {match.id.slice(0, 10)}...</p>
+                    <p className="text-xs text-gray-500">ID: {matchId.slice(0, 10)}...</p>
                   </div>
                   <Button
-                    onClick={() => handleInitializeMatch(match.id)}
+                    onClick={() => handleInitializeMatch(matchId)}
                     disabled={isLoading || isInitializing || isWaitingTransaction}
                     className="bg-green-500 hover:bg-green-600"
                   >

@@ -13,19 +13,14 @@ export function Uint256Input({ onChange, value, ...props }: Uint256InputProps) {
   };
 
   return (
-    <div className="relative">
-      <Input
-        {...props}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        value={value || ''}
-        onChange={handleChange}
-        className="pr-16 font-mono"
-      />
-      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-        <span className="text-sm text-gray-500">uint256</span>
-      </div>
-    </div>
+    <Input
+      {...props}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      value={value || ''}
+      onChange={handleChange}
+      className="font-mono"
+    />
   );
 } 
