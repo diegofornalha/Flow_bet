@@ -146,10 +146,18 @@ interface OracleMatch {
   id: `0x${string}`;
 }
 
+interface CallDetails {
+  from: string;
+  to: string;
+  input: string;
+  decodedOutput: string[];
+}
+
 export function OracleTab() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [isLoadingList, setIsLoadingList] = useState(false);
+  const [callInfo, setCallInfo] = useState<CallDetails | null>(null);
 
   // Inicialização do formulário
   const form = useForm<z.infer<typeof matchSchema>>({
@@ -163,7 +171,7 @@ export function OracleTab() {
     }
   });
 
-  // Lê todas as partidas do Oracle
+  // L todas as partidas do Oracle
   const { data: matchIds, refetch: refetchMatches } = useContractRead({
     address: CONTRACTS.ORACLE,
     abi: oracleAbi,
@@ -256,11 +264,21 @@ export function OracleTab() {
     }
   };
 
-  // Função para buscar partidas
+  // Função para buscar todas as partidas
   const handleFetchMatches = async () => {
     try {
       setIsLoadingList(true);
-      await refetchMatches();
+      const { data } = await refetchMatches();
+      
+      // Detalhes da chamada
+      const callDetails: CallDetails = {
+        from: CONTRACTS.OWNER,
+        to: `MyOracle.getAllMatches() ${CONTRACTS.ORACLE}`,
+        input: `MyOracle.getAllMatches()`,
+        decodedOutput: data ? Array.from(data).map(id => id.toString()) : [] 
+      };
+
+      setCallInfo(callDetails);
       setStatus("Lista de partidas atualizada com sucesso!");
     } catch (error) {
       console.error("Erro ao buscar partidas:", error);
@@ -387,18 +405,10 @@ export function OracleTab() {
             <CardTitle>Partidas Registradas</CardTitle>
             <Button 
               onClick={handleFetchMatches}
-              disabled={isLoadingList}
-              size="sm"
-              className="bg-green-500 hover:bg-green-600"
+              variant="outline"
+              className="bg-green-500 hover:bg-green-600 text-white"
             >
-              {isLoadingList ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent mr-2"></div>
-                  Atualizando...
-                </>
-              ) : (
-                "Atualizar Lista"
-              )}
+              Buscar Partidas
             </Button>
           </div>
         </CardHeader>
@@ -408,66 +418,18 @@ export function OracleTab() {
               <div className="animate-spin h-6 w-6 border-2 border-green-500 rounded-full border-t-transparent mx-auto"></div>
               <p className="mt-2 text-gray-500">Carregando partidas...</p>
             </div>
-          ) : matchIds && matchIds.length > 0 ? (
-            <div className="space-y-4">
-              {matchIds.map((matchId) => {
-                // Usar useContractRead para cada matchId
-                const { data: match } = useContractRead({
-                  address: CONTRACTS.ORACLE as `0x${string}`,
-                  abi: oracleAbi,
-                  functionName: "getMatch",
-                  args: [matchId],
-                });
-
-                return (
-                  <div 
-                    key={matchId}
-                    className="p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-mono text-gray-600">
-                          ID: {matchId.slice(0, 10)}...
-                        </p>
-                        {match && (
-                          <div className="mt-2 space-y-1">
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Nome:</span> {match[1]}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Times:</span> {match[2]}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Data:</span> {
-                                new Date(Number(match[4]) * 1000).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  timeZone: 'America/Sao_Paulo'
-                                })
-                              }
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Status:</span> {
-                                match[5] === 0 ? "Pendente" :
-                                match[5] === 1 ? "Em Andamento" :
-                                match[5] === 2 ? "Empate" :
-                                match[5] === 3 ? "Finalizada" : "Desconhecido"
-                              }
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          ) : matchIds ? (
+            <div className="p-4 bg-gray-50 rounded-lg font-mono text-sm">
+              <p>bytes32[]:</p>
+              {Array.from(matchIds).map((id, index) => (
+                <p key={index} className="pl-4 break-all">
+                  {index}: {id.toString()}
+                </p>
+              ))}
             </div>
           ) : (
             <p className="text-center text-gray-500">
-              Nenhuma partida registrada.
+              Clique em "Buscar Partidas" para ver a lista
             </p>
           )}
         </CardContent>
