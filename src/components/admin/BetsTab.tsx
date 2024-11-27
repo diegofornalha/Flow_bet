@@ -1,4 +1,4 @@
-import { useContractRead, useContractWrite } from "wagmi";
+import { useContractRead, useContractWrite, useWaitForTransaction } from "wagmi";
 import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -6,12 +6,13 @@ import { useState } from "react";
 import { oracleAbi, betsAbi } from "@/src/config/abis";
 
 interface OracleMatch {
-  id: string;
+  id: `0x${string}`;
+  championshipName: string;
   teamA: string;
   teamB: string;
-  exists: boolean;
-  finished: boolean;
-  teamAWon: boolean;
+  matchDate: bigint;
+  matchTime: bigint;
+  outcome: number;
 }
 
 export function BetsTab() {
@@ -20,76 +21,92 @@ export function BetsTab() {
 
   // Lê as partidas do Oracle
   const { data: oracleMatches } = useContractRead({
-    address: CONTRACTS.ORACLE,
+    address: CONTRACTS.ORACLE as `0x${string}`,
     abi: oracleAbi,
     functionName: "getAllMatches",
+    watch: true,
   });
 
-  // Lê as partidas do Bets
-  const { data: betsMatches } = useContractRead({
-    address: CONTRACTS.BETS,
+  // Hook para inicializar partida no Bets
+  const { 
+    writeAsync: initializeMatch,
+    data: initializeData,
+    isLoading: isInitializing 
+  } = useContractWrite({
+    address: CONTRACTS.BETS as `0x${string}`,
     abi: betsAbi,
-    functionName: "getAllMatches",
-  });
-
-  // Hook de escrita para criar partida no Bets
-  const { write: createMatch } = useContractWrite({
-    address: CONTRACTS.BETS,
-    abi: betsAbi,
-    functionName: "createMatch",
+    functionName: "initializeMatch",
     mode: 'prepared',
   });
 
-  // Sincroniza uma partida do Oracle com o Bets
-  const handleSyncMatch = async (match: OracleMatch) => {
+  // Hook para monitorar a transação
+  const { isLoading: isWaitingTransaction } = useWaitForTransaction({
+    hash: initializeData?.hash,
+  });
+
+  // Inicializa uma partida no Bets
+  const handleInitializeMatch = async (matchId: `0x${string}`) => {
     try {
       setIsLoading(true);
-      await createMatch?.({
-        args: [match.id as `0x${string}`, match.teamA, match.teamB],
+      setStatus("Iniciando transação...");
+
+      const tx = await initializeMatch({
+        args: [matchId],
+        overrides: {
+          gasLimit: BigInt(500000),
+        }
       });
-      setStatus(`Partida ${match.teamA} vs ${match.teamB} sincronizada com sucesso!`);
+
+      setStatus("Transação enviada! Aguardando confirmação...");
+      await tx.wait();
+      setStatus(`Partida ${matchId.slice(0, 10)}... inicializada com sucesso!`);
+
     } catch (error) {
-      console.error("Erro ao sincronizar partida:", error);
-      setStatus("Erro ao sincronizar partida");
+      console.error("Erro ao inicializar partida:", error);
+      setStatus(`Erro ao inicializar partida: ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Filtra partidas que existem no Oracle mas não no Bets
-  const pendingMatches = oracleMatches?.filter(match => 
-    match.exists && !betsMatches?.includes(match.id)
-  ) || [];
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Partidas Pendentes de Sincronização</CardTitle>
+          <CardTitle>Partidas Pendentes de Inicialização</CardTitle>
         </CardHeader>
         <CardContent>
-          {pendingMatches.length === 0 ? (
-            <p className="text-gray-500">Não há partidas pendentes de sincronização.</p>
-          ) : (
+          {oracleMatches && oracleMatches.length > 0 ? (
             <div className="space-y-4">
-              {pendingMatches.map((match) => (
+              {oracleMatches.map((match: OracleMatch) => (
                 <div 
                   key={match.id}
                   className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
                 >
                   <div>
-                    <p className="font-semibold">{match.teamA} vs {match.teamB}</p>
-                    <p className="text-sm text-gray-500">ID: {match.id.slice(0, 10)}...</p>
+                    <p className="font-semibold">{match.championshipName}</p>
+                    <p className="text-sm text-gray-600">{match.teamA} vs {match.teamB}</p>
+                    <p className="text-xs text-gray-500">ID: {match.id.slice(0, 10)}...</p>
                   </div>
                   <Button
-                    onClick={() => handleSyncMatch(match)}
-                    disabled={isLoading}
+                    onClick={() => handleInitializeMatch(match.id)}
+                    disabled={isLoading || isInitializing || isWaitingTransaction}
+                    className="bg-green-500 hover:bg-green-600"
                   >
-                    Sincronizar
+                    {isLoading || isInitializing 
+                      ? "Inicializando..." 
+                      : isWaitingTransaction 
+                        ? "Confirmando..." 
+                        : "Inicializar Partida"
+                    }
                   </Button>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-center text-gray-500">
+              Nenhuma partida pendente de inicialização.
+            </p>
           )}
 
           {status && (

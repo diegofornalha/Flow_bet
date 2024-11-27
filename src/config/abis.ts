@@ -17,6 +17,26 @@ export const betsAbi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [],
+    name: "getInitializedMatches",
+    outputs: [
+      {
+        components: [
+          { internalType: "bytes32", name: "id", type: "bytes32" },
+          { internalType: "string", name: "name", type: "string" },
+          { internalType: "string", name: "participants", type: "string" },
+          { internalType: "uint256", name: "date", type: "uint256" },
+          { internalType: "bool", name: "isActive", type: "bool" }
+        ],
+        internalType: "struct Bets.Match[]",
+        name: "",
+        type: "tuple[]"
+      }
+    ],
+    stateMutability: "view",
+    type: "function"
+  }
 ] as const;
 
 export const betPayoutAbi = [

@@ -7,6 +7,9 @@ import { CONTRACTS } from "@/src/config/contracts";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { useInitializedMatches } from '@/src/hooks/useInitializedMatches';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface BettingModalProps {
   isOpen: boolean;
@@ -52,6 +55,8 @@ export function BettingModal({ isOpen, onOpenChange }: BettingModalProps) {
   };
 
   const odds = calculateOdds();
+
+  const { matches: initializedMatches, isLoading: isLoadingMatches } = useInitializedMatches();
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -126,9 +131,45 @@ export function BettingModal({ isOpen, onOpenChange }: BettingModalProps) {
 
               {/* Tab Próximos Jogos */}
               <TabsContent value="proximos" className="mt-0">
-                <div className="p-6 text-center text-gray-500">
-                  Novos jogos serão adicionados em breve.
-                </div>
+                {isLoadingMatches ? (
+                  <div className="p-6 text-center">
+                    <div className="animate-spin h-6 w-6 border-2 border-green-500 rounded-full border-t-transparent mx-auto"></div>
+                    <p className="mt-2 text-gray-500">Carregando partidas...</p>
+                  </div>
+                ) : initializedMatches?.length > 0 ? (
+                  <div className="space-y-4">
+                    {initializedMatches.map((match) => (
+                      <Card key={match.id} className="relative overflow-hidden">
+                        <CardContent className="p-6">
+                          <h3 className="text-lg font-semibold mb-2">{match.name}</h3>
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-600">{match.participants}</p>
+                            <p className="text-sm text-gray-500">
+                              {format(match.date, "EEEE, d 'de' MMMM 'às' HH:mm", {
+                                locale: ptBR
+                              })}
+                            </p>
+                          </div>
+                          <div className="mt-4 flex justify-between items-center">
+                            <div className="text-sm text-gray-500">
+                              ID: {match.id.slice(0, 10)}...
+                            </div>
+                            <Button
+                              onClick={() => {/* Implementar lógica de aposta */}}
+                              className="bg-green-500 hover:bg-green-600 text-white"
+                            >
+                              Apostar
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-gray-500">
+                    Nenhuma partida disponível no momento.
+                  </div>
+                )}
               </TabsContent>
             </div>
           </div>
